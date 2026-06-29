@@ -9,6 +9,10 @@ This is a local version of the [GitHub-flavoured Markdown editor](https://github
 
 No Python packages are required.
 
+## Download
+
+https://github.com/alekrutkowski/GitHub-Flavoured-Markdown-Editor-Local/archive/refs/heads/main.zip
+
 ## Run on Linux
 
 ```bash
