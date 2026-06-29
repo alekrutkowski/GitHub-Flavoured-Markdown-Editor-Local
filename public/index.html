@@ -1,0 +1,2258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Markdown Editor</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id=%22g%22%20x1=%228%22%20y1=%224%22%20x2=%2256%22%20y2=%2260%22%20gradientUnits=%22userSpaceOnUse%22%3E%3Cstop%20stop-color=%22%232f81f7%22/%3E%3Cstop%20offset=%220.55%22%20stop-color=%22%238250df%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23f778ba%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width=%2264%22%20height=%2264%22%20rx=%2214%22%20fill=%22%230d1117%22/%3E%3Crect%20x=%227%22%20y=%229%22%20width=%2250%22%20height=%2246%22%20rx=%2212%22%20fill=%22url(%23g)%22/%3E%3Crect%20x=%2212%22%20y=%2214%22%20width=%2240%22%20height=%2236%22%20rx=%228%22%20fill=%22%230d1117%22%20opacity=%220.93%22/%3E%3Cpath%20d=%22M17%2042V23h6.3l7.1%209.6%207.1-9.6H44v19h-5.6V31.5l-8%2010.5-8-10.5V42H17z%22%20fill=%22%23f0f6fc%22/%3E%3Cpath%20d=%22M46.5%2028.5v12.8l7-6.4-7-6.4z%22%20fill=%22%237ee787%22/%3E%3Ccircle%20cx=%2251%22%20cy=%2217%22%20r=%223%22%20fill=%22%23f2cc60%22/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0d1117">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/github-markdown.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">								
+
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.11/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.5/lib/marked.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      },
+      startup: { typeset: false }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax/es5/tex-chtml.js"></script>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --border: #d0d7de;
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --panel-subtle: #f6f8fa;
+      --text: #24292f;
+      --muted: #57606a;
+      --button: #f6f8fa;
+      --button-hover: #eef2f6;
+      --accent: #0969da;
+      --danger: #cf222e;
+      --shadow: 0 8px 28px rgba(27, 31, 36, 0.12);
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      --font-mono: ui-monospace, SFMono-Regular, SF Mono, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --border: #30363d;
+        --bg: #0d1117;
+        --panel: #0d1117;
+        --panel-subtle: #161b22;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --button: #21262d;
+        --button-hover: #30363d;
+        --accent: #58a6ff;
+        --danger: #ff7b72;
+        --shadow: 0 8px 28px rgba(1, 4, 9, 0.8);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      overflow: hidden;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    button, select, input, textarea { font: inherit; }
+
+    .appChrome {
+      flex: 0 0 auto;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      overflow-x: clip;
+    }
+
+    .toolbar, .quickbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      white-space: normal;
+      min-width: 0;
+    }
+
+    .toolbar {
+      gap: 6px;
+      row-gap: 5px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quickbar {
+      gap: 4px;
+      row-gap: 4px;
+      padding: 5px 8px;
+      overflow-x: clip;
+      align-content: flex-start;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      margin-right: 3px;
+      min-width: max-content;
+    }
+
+    .brandIcon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      display: inline-grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #2f81f7, #8250df 55%, #f778ba);
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 22%, transparent);
+    }
+
+    .button, .select, .input {
+      border: 1px solid var(--border);
+      background: var(--button);
+      color: var(--text);
+      border-radius: 6px;
+      height: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 0 8px;
+      cursor: pointer;
+      line-height: 1;
+      min-width: 0;
+      flex: 0 0 auto;
+      touch-action: manipulation;
+    }
+
+    .button:hover { background: var(--button-hover); }
+    .button:active { transform: translateY(1px); }
+    .button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .button.small {
+      height: 26px;
+      min-width: 27px;
+      padding: 0 6px;
+      font-size: 12px;
+      border-radius: 6px;
+      gap: 4px;
+    }
+
+    .button.history { min-width: 58px; }
+    .button.utility { font-size: 12px; }
+
+    .ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      min-width: 16px;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .select {
+      min-width: 0;
+      padding: 0 24px 0 8px;
+    }
+
+    .select.small {
+      height: 26px;
+      width: 100px;
+      font-size: 12px;
+      padding-left: 6px;
+    }
+
+    .input {
+      min-width: 110px;
+      padding: 0 8px;
+    }
+
+    .fileNameInput { width: clamp(140px, 18vw, 280px); }
+
+    .fileRename, .check {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 0;
+    }
+
+    .fileRename span:first-child { white-space: nowrap; }
+    .check input { margin: 0; }
+
+    .toolGroup {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+      padding: 2px 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--panel-subtle) 78%, transparent);
+    }
+
+    .toolGroupLabel {
+      color: var(--muted);
+      font-size: 11px;
+      padding: 0 2px 0 1px;
+      user-select: none;
+    }
+
+    .spacer { flex: 1 1 90px; }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 0 1 380px;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .main {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 1fr);
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .pane {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+    }
+
+    .pane:first-child { border-right: 1px solid var(--border); }
+
+    .paneHead {
+      height: 34px;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--bg);
+    }
+
+    #fileName, #docStats, #renderStats {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #editor {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      resize: none;
+      border: 0;
+      outline: none;
+      padding: 16px;
+      font: 14px/1.55 var(--font-mono);
+      color: var(--text);
+      background: var(--panel);
+      tab-size: 2;
+      overflow: auto;
+    }
+
+    #previewScroller {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      background: var(--panel);
+    }
+
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+    }
+
+    @media (max-width: 767px) {
+      .markdown-body { padding: 15px; }
+    }
+
+    .markdown-body pre code.hljs {
+      padding: 0;
+      background: transparent;
+    }
+
+    .markdown-body .contains-task-list { padding-left: 0; }
+    .markdown-body .task-list-item { list-style-type: none; }
+    .markdown-body .task-list-item-checkbox { margin: 0 0.2em 0.25em -1.4em; vertical-align: middle; }
+
+    .markdown-body .markdown-alert {
+      padding: 0.5rem 1rem;
+      margin-bottom: 16px;
+      color: inherit;
+      border-left: 0.25em solid var(--border);
+    }
+
+    .markdown-body blockquote.markdown-alert { color: inherit; }
+    .markdown-body .markdown-alert > :first-child { margin-top: 0; }
+    .markdown-body .markdown-alert > :last-child { margin-bottom: 0; }
+
+    .markdown-body .markdown-alert-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .markdown-body .markdown-alert-title .octicon {
+      display: inline-block;
+      overflow: visible !important;
+      vertical-align: text-bottom;
+      fill: currentColor;
+      margin-right: 8px;
+      flex: none;
+    }
+
+    .markdown-body .markdown-alert-note { border-left-color: #0969da; }
+    .markdown-body .markdown-alert-note .markdown-alert-title { color: #0969da; }
+    .markdown-body .markdown-alert-tip { border-left-color: #1a7f37; }
+    .markdown-body .markdown-alert-tip .markdown-alert-title { color: #1a7f37; }
+    .markdown-body .markdown-alert-important { border-left-color: #8250df; }
+    .markdown-body .markdown-alert-important .markdown-alert-title { color: #8250df; }
+    .markdown-body .markdown-alert-warning { border-left-color: #9a6700; }
+    .markdown-body .markdown-alert-warning .markdown-alert-title { color: #9a6700; }
+    .markdown-body .markdown-alert-caution { border-left-color: #cf222e; }
+    .markdown-body .markdown-alert-caution .markdown-alert-title { color: #cf222e; }
+
+    @media (prefers-color-scheme: dark) {
+      .markdown-body .markdown-alert-note { border-left-color: #4493f8; }
+      .markdown-body .markdown-alert-note .markdown-alert-title { color: #4493f8; }
+      .markdown-body .markdown-alert-tip { border-left-color: #3fb950; }
+      .markdown-body .markdown-alert-tip .markdown-alert-title { color: #3fb950; }
+      .markdown-body .markdown-alert-important { border-left-color: #ab7df8; }
+      .markdown-body .markdown-alert-important .markdown-alert-title { color: #ab7df8; }
+      .markdown-body .markdown-alert-warning { border-left-color: #d29922; }
+      .markdown-body .markdown-alert-warning .markdown-alert-title { color: #d29922; }
+      .markdown-body .markdown-alert-caution { border-left-color: #f85149; }
+      .markdown-body .markdown-alert-caution .markdown-alert-title { color: #f85149; }
+    }
+
+    .markdown-body code .ColorPreview,
+    .markdown-body .ColorPreview {
+      display: inline-block;
+      width: 0.75em;
+      height: 0.75em;
+      margin-right: 0.25em;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      vertical-align: -0.08em;
+    }
+
+    .diagramShell {
+      margin: 16px 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel-subtle);
+    }
+
+    .diagramTitle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .diagramBody { padding: 10px; overflow: auto; }
+    .diagramBody svg, .diagramBody canvas { display: block; max-width: 100%; margin: 0 auto; background: var(--panel); border-radius: 6px; }
+    .diagramBody canvas.stlCanvas { width: 100%; height: 360px; cursor: grab; touch-action: none; }
+
+    .markdown-body .github-map {
+      margin: 16px 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .markdown-body .github-map .diagram-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      background: color-mix(in srgb, var(--bg) 75%, var(--panel));
+    }
+
+    .markdown-body .github-map .map-canvas {
+      width: 100%;
+      height: 320px;
+      min-height: 260px;
+      position: relative;
+      background: #ddd;
+    }
+
+    .markdown-body .github-map .leaflet-container {
+      width: 100%;
+      height: 100%;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: #ddd !important;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .markdown-body .github-map .leaflet-pane,
+    .markdown-body .github-map .leaflet-layer,
+    .markdown-body .github-map .leaflet-map-pane,
+    .markdown-body .github-map .leaflet-tile-pane,
+    .markdown-body .github-map .leaflet-tile-container,
+    .markdown-body .github-map .leaflet-overlay-pane,
+    .markdown-body .github-map .leaflet-marker-pane,
+    .markdown-body .github-map .leaflet-shadow-pane,
+    .markdown-body .github-map .leaflet-tooltip-pane,
+    .markdown-body .github-map .leaflet-popup-pane {
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .markdown-body .github-map .leaflet-container img,
+    .markdown-body .github-map .leaflet-container svg,
+    .markdown-body .github-map .leaflet-container canvas,
+    .markdown-body .github-map .leaflet-tile,
+    .markdown-body .github-map .leaflet-marker-icon,
+    .markdown-body .github-map .leaflet-marker-shadow {
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      box-sizing: content-box !important;
+    }
+
+    .markdown-body .github-map .leaflet-tile {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .markdown-body .github-map .leaflet-overlay-pane svg {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    .markdown-body .github-map .leaflet-marker-icon.github-map-inline-marker,
+    .markdown-body .github-map .leaflet-marker-icon.github-map-div-marker,
+    .markdown-body .github-map .leaflet-marker-shadow.github-map-inline-marker {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      font-size: 0 !important;
+      color: transparent !important;
+      line-height: 0 !important;
+    }
+
+    .markdown-body .github-map .github-map-div-marker svg {
+      display: block !important;
+      width: 25px !important;
+      height: 41px !important;
+      max-width: none !important;
+      max-height: none !important;
+      overflow: visible !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    .diagramBody canvas.stlCanvas:active { cursor: grabbing; }
+    .diagramHint { color: var(--muted); font-size: 12px; margin-top: 8px; text-align: center; }
+    .diagramError { color: var(--danger); font-size: 13px; white-space: pre-wrap; }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-subtle);
+      overflow: auto;
+    }
+
+    .math-display { overflow-x: auto; }
+
+    #dropOverlay {
+      position: fixed;
+      inset: 16px;
+      z-index: 30;
+      display: none;
+      place-items: center;
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--panel) 82%, transparent);
+      box-shadow: var(--shadow);
+      color: var(--accent);
+      font-size: 22px;
+      font-weight: 650;
+      pointer-events: none;
+    }
+
+    body.dragging #dropOverlay { display: grid; }
+    .hidden { display: none !important; }
+
+    .modalBackdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(1, 4, 9, 0.42);
+    }
+
+    .modalBackdrop.show { display: grid; }
+
+    .modal {
+      width: min(880px, 96vw);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .modalHead, .modalFoot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modalFoot { border-top: 1px solid var(--border); border-bottom: 0; }
+    .modalHead strong { font-size: 14px; }
+    .modalControls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .modalControls .check { white-space: nowrap; }
+    .modalBody { padding: 12px; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+
+    #pasteArea {
+      width: 100%;
+      height: min(42vh, 360px);
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--text);
+      background: var(--panel-subtle);
+      font: 13px/1.45 var(--font-mono);
+    }
+
+    .modalHelp { color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 1120px) {
+      .button.utility .label.optional,
+      .button.history .label.optional,
+      .brandText .optional { display: none; }
+      .status { flex-basis: 220px; }
+      .fileNameInput { width: clamp(120px, 20vw, 220px); }
+    }
+
+    @media (max-width: 840px) {
+      html, body { overflow: hidden; }
+      .toolbar, .quickbar { padding-left: 6px; padding-right: 6px; }
+      .button .label.compactHide,
+      .button.small .label { display: none; }
+      .button.small { width: 28px; padding: 0; }
+      .select.small { width: 88px; }
+      .toolGroupLabel { display: none; }
+      .fileRename span:first-child { display: none; }
+      .check span { display: none; }
+      .status { display: none; }
+      .main {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(220px, 45fr) minmax(240px, 55fr);
+      }
+      .pane:first-child { border-right: 0; border-bottom: 1px solid var(--border); }
+      .markdown-body { padding: 18px; }
+    }
+
+    @media (max-width: 520px) {
+      .brandText { display: none; }
+      .fileNameInput { width: min(48vw, 180px); }
+      .button:not(.small) { padding-left: 7px; padding-right: 7px; }
+      .toolbar { gap: 4px; }
+      .quickbar { gap: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="appChrome" id="appChrome">
+    <div class="toolbar" aria-label="File and editor toolbar">
+      <div class="brand" title="GitHub Markdown Editor"><span class="brandIcon">MD</span><span class="brandText">GitHub <span class="optional">MD editor</span></span></div>
+      <button class="button utility" id="openBtn" type="button" title="Open a Markdown file"><span class="ico">📂</span><span class="label compactHide">Open</span></button>
+      <button class="button utility" id="saveBtn" type="button" title="Save/download the current Markdown"><span class="ico">💾</span><span class="label compactHide">Save</span></button>
+      <button class="button utility" id="saveAsBtn" type="button" title="Save the current Markdown under a different name or in another folder"><span class="ico">🗂️</span><span class="label compactHide">Save as</span></button>
+      <button class="button history" id="undoBtn" type="button" title="Undo, Ctrl+Z"><span class="ico">↶</span><span class="label optional">Undo</span></button>
+      <button class="button history" id="redoBtn" type="button" title="Redo, Ctrl+Y or Ctrl+Shift+Z"><span class="ico">↷</span><span class="label optional">Redo</span></button>
+      <button class="button utility" id="exampleBtn" type="button" title="Load the built-in GitHub formatting example"><span class="ico">✨</span><span class="label optional">Example</span></button>
+      <button class="button utility" id="clearCacheBtn" type="button" title="Clear the local autosave cache. Current editor content is unchanged."><span class="ico">🧹</span><span class="label optional">Cache</span></button>
+      <input class="hidden" id="fileInput" type="file" accept=".md,.markdown,.mdown,.mkd,.txt,text/markdown,text/plain">
+
+      <label class="fileRename" title="Sets the file name used when saving/downloading.">
+        <span>file</span>
+        <input class="input fileNameInput" id="fileNameInput" value="untitled.md" spellcheck="false" autocomplete="off">
+      </label>
+
+      <label class="check" title="Highlight code blocks after rendering."><input id="highlightToggle" type="checkbox" checked><span>highlight</span></label>
+      <label class="check" title="Keep editor and preview approximately aligned while scrolling."><input id="syncToggle" type="checkbox" checked><span>sync</span></label>
+
+      <div class="spacer"></div>
+      <div class="status" id="status">Ready.</div>
+    </div>
+
+    <div class="quickbar" aria-label="Markdown insertion toolbar">
+      <div class="toolGroup" title="Text formatting">
+        <span class="toolGroupLabel">Text</span>
+        <button class="button small" type="button" data-cmd="h1" title="Heading 1"><span class="ico">H₁</span><span class="label">H1</span></button>
+        <button class="button small" type="button" data-cmd="h2" title="Heading 2"><span class="ico">H₂</span><span class="label">H2</span></button>
+        <button class="button small" type="button" data-cmd="bold" title="Bold"><span class="ico"><strong>B</strong></span><span class="label">Bold</span></button>
+        <button class="button small" type="button" data-cmd="italic" title="Italic"><span class="ico"><em>I</em></span><span class="label">Italic</span></button>
+        <button class="button small" type="button" data-cmd="strike" title="Strikethrough"><span class="ico"><s>S</s></span><span class="label">Strike</span></button>
+        <button class="button small" type="button" data-cmd="code" title="Inline code"><span class="ico">⌘</span><span class="label">Code</span></button>
+      </div>
+
+      <div class="toolGroup" title="Structure">
+        <span class="toolGroupLabel">Block</span>
+        <button class="button small" type="button" data-cmd="link" title="Link"><span class="ico">🔗</span><span class="label">Link</span></button>
+        <button class="button small" type="button" data-cmd="image" title="Image"><span class="ico">🖼️</span><span class="label">Image</span></button>
+        <button class="button small" type="button" data-cmd="quote" title="Quote"><span class="ico">❝</span><span class="label">Quote</span></button>
+        <button class="button small" type="button" data-cmd="fence" title="Code fence"><span class="ico">▣</span><span class="label">Fence</span></button>
+        <button class="button small" type="button" data-cmd="details" title="GitHub collapsed details"><span class="ico">▸</span><span class="label">Details</span></button>
+      </div>
+
+      <div class="toolGroup" title="Lists and tables">
+        <span class="toolGroupLabel">Lists</span>
+        <button class="button small" type="button" data-cmd="bullet" title="Bulleted list"><span class="ico">•</span><span class="label">List</span></button>
+        <button class="button small" type="button" data-cmd="numbered" title="Numbered list"><span class="ico">1.</span><span class="label">Nums</span></button>
+        <button class="button small" type="button" data-cmd="task" title="Task list"><span class="ico">☑</span><span class="label">Task</span></button>
+        <button class="button small" type="button" data-cmd="table" title="Markdown table"><span class="ico">▦</span><span class="label">Table</span></button>
+      </div>
+
+      <div class="toolGroup" title="GitHub-specific extensions">
+        <span class="toolGroupLabel">GitHub</span>
+        <select class="select small" id="alertKind" title="GitHub alert type">
+          <option>NOTE</option>
+          <option>TIP</option>
+          <option>IMPORTANT</option>
+          <option>WARNING</option>
+          <option>CAUTION</option>
+        </select>
+        <button class="button small" id="insertAlertBtn" type="button" title="Insert GitHub alert"><span class="ico">💡</span><span class="label">Alert</span></button>
+        <button class="button small" type="button" data-cmd="color" title="GitHub color chip"><span class="ico">🎨</span><span class="label">Color</span></button>
+        <button class="button small" type="button" data-cmd="mathInline" title="Inline math"><span class="ico">∑</span><span class="label">Math</span></button>
+        <button class="button small" type="button" data-cmd="mathBlock" title="Display math"><span class="ico">∫</span><span class="label">Block</span></button>
+      </div>
+
+      <div class="toolGroup" title="GitHub diagram fences">
+        <span class="toolGroupLabel">Diagrams</span>
+        <button class="button small" type="button" data-cmd="mermaid" title="Mermaid diagram"><span class="ico">🧜</span><span class="label">Mermaid</span></button>
+        <button class="button small" type="button" data-cmd="geojson" title="GeoJSON diagram"><span class="ico">🗺️</span><span class="label">GeoJSON</span></button>
+        <button class="button small" type="button" data-cmd="topojson" title="TopoJSON diagram"><span class="ico">🌐</span><span class="label">TopoJSON</span></button>
+        <button class="button small" type="button" data-cmd="stl" title="ASCII STL diagram"><span class="ico">🧊</span><span class="label">STL</span></button>
+      </div>
+
+      <div class="toolGroup" title="Table and output tools">
+        <span class="toolGroupLabel">Tools</span>
+        <button class="button small" id="formatTablesBtn" type="button" title="Align all GitHub-style pipe tables in the Markdown source"><span class="ico">⇥</span><span class="label">Align</span></button>
+        <button class="button small" id="pasteDataBtn" type="button" title="Paste CSV or TSV in a local text box and insert it as a Markdown table"><span class="ico">📋</span><span class="label">CSV</span></button>
+        <button class="button small" id="copyTsvBtn" type="button" title="Copy the selected or current Markdown table as TSV"><span class="ico">⧉</span><span class="label">TSV</span></button>
+        <button class="button small" id="copyRBtn" type="button" title="Copy the selected or current Markdown table as an R data.table literal"><span class="ico">R</span><span class="label">DT</span></button>
+        <button class="button small" id="copyHtmlBtn" type="button" title="Copy rendered preview HTML"><span class="ico">⌬</span><span class="label">HTML</span></button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+    <section class="pane">
+      <div class="paneHead"><span id="fileName">untitled.md</span><span id="docStats">0 bytes</span></div>
+      <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+    </section>
+
+    <section class="pane">
+      <div class="paneHead"><span>Preview</span><span id="renderStats">not rendered yet</span></div>
+      <div id="previewScroller"><article id="preview" class="markdown-body"></article></div>
+    </section>
+  </main>
+
+  <div id="dropOverlay">Drop Markdown file to open</div>
+
+  <div class="modalBackdrop" id="pasteModal" role="dialog" aria-modal="true" aria-labelledby="pasteTitle">
+    <div class="modal">
+      <div class="modalHead"><strong id="pasteTitle">Paste CSV or TSV data</strong><div class="modalControls"><label class="check" title="Choose a delimiter, or leave this on auto-detect."><span>delimiter</span><select class="select small" id="pasteDelimiter"><option value="auto">auto</option><option value="tab">tab</option><option value=",">comma</option><option value=";">semicolon</option></select></label><button class="button small" id="closePasteBtn" type="button" title="Close"><span class="ico">×</span></button></div></div>
+      <div class="modalBody">
+        <textarea id="pasteArea" spellcheck="false" placeholder="Paste CSV or TSV here. Quoted fields are supported."></textarea>
+        <div class="modalHelp">Press Ctrl+Enter to insert. Choose a delimiter or leave it on auto. Quoted fields are supported.</div>
+      </div>
+      <div class="modalFoot"><span class="modalHelp">This uses normal paste into a text area, so the browser should not ask for clipboard-read permission.</span><button class="button" id="insertPastedTableBtn" type="button"><span class="ico">▦</span><span class="label">Insert Markdown table</span></button></div>
+    </div>
+  </div>
+
+<script id="localBackendBoot">
+window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static"};
+</script>
+  <script>
+    (() => {
+      'use strict';
+
+      const LOCAL_BACKEND = window.__LOCAL_BACKEND__ || {};
+      let currentLocalPath = LOCAL_BACKEND.startupPath || '';
+
+      const els = {
+        editor: document.getElementById('editor'),
+        preview: document.getElementById('preview'),
+        previewScroller: document.getElementById('previewScroller'),
+        fileName: document.getElementById('fileName'),
+        fileNameInput: document.getElementById('fileNameInput'),
+        docStats: document.getElementById('docStats'),
+        renderStats: document.getElementById('renderStats'),
+        status: document.getElementById('status'),
+        fileInput: document.getElementById('fileInput'),
+        openBtn: document.getElementById('openBtn'),
+        saveBtn: document.getElementById('saveBtn'),
+        saveAsBtn: document.getElementById('saveAsBtn'),
+        undoBtn: document.getElementById('undoBtn'),
+        redoBtn: document.getElementById('redoBtn'),
+        exampleBtn: document.getElementById('exampleBtn'),
+        clearCacheBtn: document.getElementById('clearCacheBtn'),
+        highlightToggle: document.getElementById('highlightToggle'),
+        syncToggle: document.getElementById('syncToggle'),
+        formatTablesBtn: document.getElementById('formatTablesBtn'),
+        pasteDataBtn: document.getElementById('pasteDataBtn'),
+        copyTsvBtn: document.getElementById('copyTsvBtn'),
+        copyRBtn: document.getElementById('copyRBtn'),
+        copyHtmlBtn: document.getElementById('copyHtmlBtn'),
+        insertAlertBtn: document.getElementById('insertAlertBtn'),
+        alertKind: document.getElementById('alertKind'),
+        pasteModal: document.getElementById('pasteModal'),
+        pasteArea: document.getElementById('pasteArea'),
+        pasteDelimiter: document.getElementById('pasteDelimiter'),
+        insertPastedTableBtn: document.getElementById('insertPastedTableBtn'),
+        closePasteBtn: document.getElementById('closePasteBtn')
+      };
+
+      const CACHE_TEXT = 'gh-md-editor.text.v5';
+      const CACHE_NAME = 'gh-md-editor.fileName.v5';
+      const MAX_HISTORY = 180;
+      const alertTypes = ['NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION'];
+
+      const EXAMPLE = `# GitHub Markdown fidelity playground
+
+This editor focuses on fast GitHub-flavored Markdown preview, including GitHub-specific alerts, color chips, math, and diagram fences.
+
+## Alerts
+
+> [!NOTE]
+> Useful information that users should know, even when skimming content.
+
+> [!TIP]
+> Helpful advice for doing things better or more easily.
+
+> [!IMPORTANT]
+> Key information users need to know to achieve their goal.
+
+> [!WARNING]
+> Urgent info that needs immediate user attention to avoid problems.
+
+> [!CAUTION]
+> Advises about risks or negative outcomes of certain actions.
+
+## Tables
+
+| Feature | Local status | Notes |
+| :--- | :---: | ---: |
+| Alerts | supported | GitHub-style icons |
+| Tables | supported | align source with the toolbar |
+| Math | supported | MathJax local preview |
+| Diagrams | supported | Mermaid, GeoJSON, TopoJSON, STL |
+
+## Task lists
+
+- [x] Drag and drop Markdown files
+- [x] Rename the file before saving
+- [x] Autosave locally
+- [ ] Push directly to GitHub
+
+## Color chips
+
+GitHub-style inline color chips: \`#0969DA\`, \`rgb(31, 136, 61)\`, and \`hsl(212, 92%, 45%)\`.
+
+## Math
+
+Inline math: $\\sqrt{3x-1}+(1+x)^2$.
+
+Display math:
+
+$$
+\\left( \\sum_{k=1}^n a_k b_k \\right)^2 \\leq \\left( \\sum_{k=1}^n a_k^2 \\right) \\left( \\sum_{k=1}^n b_k^2 \\right)
+$$
+
+\`\`\`math
+\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}
+\`\`\`
+
+## Mermaid
+
+\`\`\`mermaid
+graph TD
+    A[Markdown source] --> B[Fast local renderer]
+    B --> C{GitHub extras}
+    C --> D[Alerts]
+    C --> E[Math]
+    C --> F[Diagrams]
+\`\`\`
+
+## GeoJSON
+
+\`\`\`geojson
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"name": "Luxembourg"}, "geometry": {"type": "Point", "coordinates": [6.1296, 49.6116]}}
+  ]
+}
+\`\`\`
+
+## TopoJSON
+
+\`\`\`topojson
+{"type":"Topology","objects":{"example":{"type":"GeometryCollection","geometries":[{"type":"Point","properties":{"name":"Luxembourg"},"coordinates":[6.1296,49.6116]}]}},"arcs":[]}
+\`\`\`
+
+## STL
+
+\`\`\`stl
+solid pyramid
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+      vertex 0.5 0.5 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 0 0
+      vertex 1 1 0
+      vertex 0.5 0.5 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 1 0
+      vertex 0 1 0
+      vertex 0.5 0.5 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 1 0
+      vertex 0 0 0
+      vertex 0.5 0.5 1
+    endloop
+  endfacet
+endsolid pyramid
+\`\`\`
+
+\`\`\`stl
+solid tetrahedron
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+      vertex 0 1 0
+    endloop
+  endfacet
+  facet normal 1 1 1
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+      vertex 0 0 1
+    endloop
+  endfacet
+endsolid tetrahedron
+\`\`\`
+
+## Hiding details
+
+<details>
+<summary>Collapsed details</summary>
+
+GitHub supports raw HTML details blocks in Markdown files.
+
+</details>
+`;
+
+      let history = [];
+      let historyIndex = -1;
+      let inputHistoryTimer = 0;
+      let renderTimer = 0;
+      let renderSeq = 0;
+      let isApplyingHistory = false;
+      let syncFrom = null;
+      let worker = null;
+
+      function setStatus(message) {
+        els.status.textContent = message;
+      }
+
+      function normalizeFileName(name) {
+        const clean = (name || 'untitled.md').replace(/[\\/:*?"<>|]+/g, '-').trim() || 'untitled.md';
+        return /\.(md|markdown|mdown|mkd|txt)$/i.test(clean) ? clean : clean + '.md';
+      }
+
+      function updateFileName(name) {
+        const finalName = normalizeFileName(name);
+        els.fileNameInput.value = finalName;
+        els.fileName.textContent = finalName;
+        try { localStorage.setItem(CACHE_NAME, finalName); } catch (_) {}
+      }
+
+      function byteLength(text) {
+        return new Blob([text]).size;
+      }
+
+      function updateStats() {
+        const text = els.editor.value;
+        const bytes = byteLength(text).toLocaleString();
+        const lines = text ? text.split('\n').length : 0;
+        els.docStats.textContent = `${bytes} bytes · ${lines.toLocaleString()} lines`;
+      }
+
+      function updateHistoryButtons() {
+        els.undoBtn.disabled = historyIndex <= 0;
+        els.redoBtn.disabled = historyIndex >= history.length - 1;
+      }
+
+      function currentState() {
+        return { text: els.editor.value, start: els.editor.selectionStart, end: els.editor.selectionEnd };
+      }
+
+      function sameState(a, b) {
+        return a && b && a.text === b.text && a.start === b.start && a.end === b.end;
+      }
+
+      function pushHistory(state = currentState()) {
+        const last = history[historyIndex];
+        if (sameState(last, state)) return;
+        history = history.slice(0, historyIndex + 1);
+        history.push({ text: state.text, start: state.start, end: state.end });
+        if (history.length > MAX_HISTORY) history.shift();
+        historyIndex = history.length - 1;
+        updateHistoryButtons();
+      }
+
+      function resetHistory() {
+        history = [];
+        historyIndex = -1;
+        pushHistory(currentState());
+      }
+
+      function flushPendingHistory() {
+        if (inputHistoryTimer) {
+          clearTimeout(inputHistoryTimer);
+          inputHistoryTimer = 0;
+        }
+        if (!sameState(history[historyIndex], currentState())) pushHistory(currentState());
+      }
+
+      function applyState(state) {
+        isApplyingHistory = true;
+        els.editor.value = state.text;
+        els.editor.selectionStart = state.start;
+        els.editor.selectionEnd = state.end;
+        isApplyingHistory = false;
+        updateStats();
+        requestRender();
+        saveCache();
+        els.editor.focus();
+      }
+
+      function undo() {
+        flushPendingHistory();
+        if (historyIndex <= 0) return;
+        historyIndex--;
+        applyState(history[historyIndex]);
+        updateHistoryButtons();
+      }
+
+      function redo() {
+        flushPendingHistory();
+        if (historyIndex >= history.length - 1) return;
+        historyIndex++;
+        applyState(history[historyIndex]);
+        updateHistoryButtons();
+      }
+
+      function saveCache() {
+        try {
+          localStorage.setItem(CACHE_TEXT, els.editor.value);
+          localStorage.setItem(CACHE_NAME, normalizeFileName(els.fileNameInput.value));
+        } catch (_) {}
+      }
+
+      function setEditorValue(text, selectionStart = 0, selectionEnd = selectionStart, mode = 'push') {
+        els.editor.value = text;
+        els.editor.selectionStart = selectionStart;
+        els.editor.selectionEnd = selectionEnd;
+        updateStats();
+        requestRender();
+        saveCache();
+        if (mode === 'reset') resetHistory();
+        if (mode === 'push') pushHistory(currentState());
+      }
+
+      function replaceSelection(replacement, selectStartOffset = replacement.length, selectEndOffset = selectStartOffset) {
+        flushPendingHistory();
+        const start = els.editor.selectionStart;
+        const end = els.editor.selectionEnd;
+        const before = els.editor.value.slice(0, start);
+        const after = els.editor.value.slice(end);
+        const text = before + replacement + after;
+        setEditorValue(text, start + selectStartOffset, start + selectEndOffset, 'push');
+        els.editor.focus();
+      }
+
+      function wrapSelection(prefix, suffix = prefix, placeholder = 'text') {
+        const start = els.editor.selectionStart;
+        const end = els.editor.selectionEnd;
+        const selected = els.editor.value.slice(start, end) || placeholder;
+        replaceSelection(prefix + selected + suffix, prefix.length, prefix.length + selected.length);
+      }
+
+      function prefixSelectedLines(prefix) {
+        flushPendingHistory();
+        const value = els.editor.value;
+        const start = els.editor.selectionStart;
+        const end = els.editor.selectionEnd;
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        const lineEndIdx = value.indexOf('\n', end);
+        const lineEnd = lineEndIdx === -1 ? value.length : lineEndIdx;
+        const block = value.slice(lineStart, lineEnd);
+        const lines = block.split('\n');
+        const next = lines.map(line => prefix + line).join('\n');
+        setEditorValue(value.slice(0, lineStart) + next + value.slice(lineEnd), lineStart, lineStart + next.length, 'push');
+        els.editor.focus();
+      }
+
+      function insertBlock(block, cursorNeedle = '') {
+        const pos = els.editor.selectionStart;
+        const value = els.editor.value;
+        const needsBefore = pos > 0 && value[pos - 1] !== '\n';
+        const needsAfter = pos < value.length && value[pos] !== '\n';
+        const text = (needsBefore ? '\n\n' : '') + block + (needsAfter ? '\n\n' : '');
+        const cursorOffset = cursorNeedle ? text.indexOf(cursorNeedle) : text.length;
+        replaceSelection(text, cursorOffset >= 0 ? cursorOffset : text.length, cursorOffset >= 0 ? cursorOffset + cursorNeedle.length : text.length);
+      }
+
+      function insertCommand(cmd) {
+        const selected = els.editor.value.slice(els.editor.selectionStart, els.editor.selectionEnd);
+        switch (cmd) {
+          case 'h1': prefixSelectedLines('# '); break;
+          case 'h2': prefixSelectedLines('## '); break;
+          case 'bold': wrapSelection('**', '**', 'bold text'); break;
+          case 'italic': wrapSelection('_', '_', 'italic text'); break;
+          case 'strike': wrapSelection('~~', '~~', 'struck text'); break;
+          case 'code': wrapSelection('`', '`', 'code'); break;
+          case 'link': wrapSelection('[', '](https://example.com)', selected || 'link text'); break;
+          case 'image': replaceSelection(`![${selected || 'alt text'}](image.png)`, 2, 2 + (selected || 'alt text').length); break;
+          case 'quote': prefixSelectedLines('> '); break;
+          case 'fence': insertBlock('```\n' + (selected || 'code') + '\n```', selected || 'code'); break;
+          case 'bullet': prefixSelectedLines('- '); break;
+          case 'numbered': prefixNumberedLines(); break;
+          case 'task': prefixSelectedLines('- [ ] '); break;
+          case 'table': insertBlock(markdownTableFromRows([['Feature', 'Status', 'Notes'], ['Alerts', 'supported', 'GitHub syntax'], ['Tables', 'supported', 'Aligned source']]), 'Feature'); break;
+          case 'details': insertBlock('<details>\n<summary>Summary</summary>\n\nHidden content.\n\n</details>', 'Summary'); break;
+          case 'color': replaceSelection('`#0969DA`', 1, 8); break;
+          case 'mathInline': wrapSelection('$', '$', '\\sqrt{3x-1}+(1+x)^2'); break;
+          case 'mathBlock': insertBlock('$$\n' + (selected || '\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}') + '\n$$', selected || '\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}'); break;
+          case 'mermaid': insertBlock('```mermaid\ngraph TD\n    A[Start] --> B[Finish]\n```', 'Start'); break;
+          case 'geojson': insertBlock('```geojson\n{\n  "type": "FeatureCollection",\n  "features": [\n    {"type": "Feature", "properties": {"name": "Luxembourg"}, "geometry": {"type": "Point", "coordinates": [6.1296, 49.6116]}}\n  ]\n}\n```', 'Luxembourg'); break;
+          case 'topojson': insertBlock('```topojson\n{"type":"Topology","objects":{"example":{"type":"GeometryCollection","geometries":[{"type":"Point","properties":{"name":"Luxembourg"},"coordinates":[6.1296,49.6116]}]}},"arcs":[]}\n```', 'Luxembourg'); break;
+          case 'stl': insertBlock('```stl\nsolid triangle\n  facet normal 0 0 0\n    outer loop\n      vertex 0 0 0\n      vertex 1 0 0\n      vertex 0 1 0\n    endloop\n  endfacet\nendsolid triangle\n```', 'triangle'); break;
+        }
+      }
+
+      function prefixNumberedLines() {
+        flushPendingHistory();
+        const value = els.editor.value;
+        const start = els.editor.selectionStart;
+        const end = els.editor.selectionEnd;
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        const lineEndIdx = value.indexOf('\n', end);
+        const lineEnd = lineEndIdx === -1 ? value.length : lineEndIdx;
+        const lines = value.slice(lineStart, lineEnd).split('\n');
+        const next = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
+        setEditorValue(value.slice(0, lineStart) + next + value.slice(lineEnd), lineStart, lineStart + next.length, 'push');
+        els.editor.focus();
+      }
+
+      function insertAlert() {
+        const type = els.alertKind.value || 'NOTE';
+        const fallback = {
+          NOTE: 'Useful information that users should know, even when skimming content.',
+          TIP: 'Helpful advice for doing things better or more easily.',
+          IMPORTANT: 'Key information users need to know to achieve their goal.',
+          WARNING: 'Urgent info that needs immediate user attention to avoid problems.',
+          CAUTION: 'Advises about risks or negative outcomes of certain actions.'
+        }[type] || 'Alert text.';
+        const selected = els.editor.value.slice(els.editor.selectionStart, els.editor.selectionEnd) || fallback;
+        const quoted = selected.split('\n').map(line => `> ${line}`).join('\n');
+        insertBlock(`> [!${type}]\n${quoted}`, selected);
+      }
+
+      function createWorker() {
+        const src = `
+          importScripts('https://cdn.jsdelivr.net/npm/marked@18.0.5/lib/marked.umd.js');
+          const markedLib = self.marked && (self.marked.marked || self.marked);
+          if (markedLib && markedLib.setOptions) {
+            markedLib.setOptions({ gfm: true, breaks: false, pedantic: false });
+          }
+          self.onmessage = (event) => {
+            const { id, text } = event.data;
+            try {
+              const html = markedLib.parse(text || '');
+              self.postMessage({ id, html });
+            } catch (err) {
+              self.postMessage({ id, error: err && err.message ? err.message : String(err) });
+            }
+          };
+        `;
+        try {
+          const blob = new Blob([src], { type: 'text/javascript' });
+          const url = URL.createObjectURL(blob);
+          const w = new Worker(url);
+          w.addEventListener('message', onWorkerMessage);
+          w.addEventListener('error', () => { worker = null; });
+          return w;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function requestRender() {
+        clearTimeout(renderTimer);
+        renderTimer = setTimeout(renderNow, 80);
+      }
+
+      function renderNow() {
+        const text = els.editor.value;
+        const id = ++renderSeq;
+        const started = performance.now();
+        els.renderStats.textContent = 'rendering…';
+        if (worker) {
+          worker.postMessage({ id, text, started });
+          return;
+        }
+        try {
+          const markedLib = window.marked && (window.marked.marked || window.marked);
+          if (markedLib && markedLib.setOptions) markedLib.setOptions({ gfm: true, breaks: false, pedantic: false });
+          finishRender(id, markedLib.parse(text || ''), started);
+        } catch (err) {
+          els.preview.innerHTML = `<pre>${escapeHtml(String(err))}</pre>`;
+        }
+      }
+
+      function onWorkerMessage(event) {
+        const { id, html, error } = event.data;
+        if (id !== renderSeq) return;
+        if (error) {
+          els.preview.innerHTML = `<pre>${escapeHtml(error)}</pre>`;
+          return;
+        }
+        finishRender(id, html, performance.now());
+      }
+
+      function finishRender(id, rawHtml, started) {
+        if (id !== renderSeq) return;
+        const safe = window.DOMPurify ? DOMPurify.sanitize(rawHtml, {
+          USE_PROFILES: { html: true, svg: true },
+          ADD_TAGS: ['details', 'summary'],
+          ADD_ATTR: ['class', 'id', 'style', 'align', 'width', 'height', 'viewBox', 'd', 'fill', 'stroke', 'stroke-width', 'points', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'aria-hidden', 'role']
+        }) : rawHtml;
+        els.preview.innerHTML = safe;
+        postProcessPreview();
+        const ms = Math.max(1, Math.round(performance.now() - started));
+        els.renderStats.textContent = `rendered in ${ms} ms`;
+      }
+
+      function postProcessPreview() {
+        transformMathFences();
+        transformAlerts();
+        addHeadingIds();
+        addColorChips();
+        transformDiagrams();
+        highlightCode();
+        typesetMath();
+      }
+
+      function highlightCode() {
+        if (!els.highlightToggle.checked || !window.hljs) return;
+        els.preview.querySelectorAll('pre code:not(.language-mermaid):not(.language-geojson):not(.language-topojson):not(.language-stl):not(.language-math)').forEach(code => {
+          try { window.hljs.highlightElement(code); } catch (_) {}
+        });
+      }
+
+      function typesetMath() {
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([els.preview]).catch(() => {});
+        }
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      }
+
+      const octicons = {
+        NOTE: '<svg class="octicon octicon-info" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>',
+        TIP: '<svg class="octicon octicon-light-bulb" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8.5 1.5c-2.363 0-4.25 1.887-4.25 4.25 0 1.119.438 2.136 1.152 2.893.56.593.848 1.27.848 1.857V11h4.5v-.5c0-.587.288-1.264.848-1.857A4.235 4.235 0 0 0 12.75 5.75c0-2.363-1.887-4.25-4.25-4.25ZM3 5.75C3 2.559 5.559 0 8.75 0s5.75 2.559 5.75 5.75a5.735 5.735 0 0 1-1.558 3.92c-.486.515-.692.969-.692 1.33v.75a.75.75 0 0 1-.75.75h-6a.75.75 0 0 1-.75-.75V11c0-.361-.206-.815-.692-1.33A5.735 5.735 0 0 1 3 5.75ZM5.75 14a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75Zm1 2a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1-.75-.75Z"></path></svg>',
+        IMPORTANT: '<svg class="octicon octicon-report" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>',
+        WARNING: '<svg class="octicon octicon-alert" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>',
+        CAUTION: '<svg class="octicon octicon-stop" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.47.22A.75.75 0 0 1 5 0h6a.75.75 0 0 1 .53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 0 1-.22.53l-4.25 4.25A.75.75 0 0 1 11 16H5a.75.75 0 0 1-.53-.22L.22 11.53A.75.75 0 0 1 0 11V5a.75.75 0 0 1 .22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8.75 4.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>'
+      };
+
+      function transformAlerts() {
+        const markerRe = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i;
+        els.preview.querySelectorAll('blockquote').forEach(blockquote => {
+          const first = blockquote.firstElementChild;
+          if (!first || first.tagName !== 'P') return;
+          const match = first.textContent.match(markerRe);
+          if (!match) return;
+          const type = match[1].toUpperCase();
+          blockquote.classList.add('markdown-alert', `markdown-alert-${type.toLowerCase()}`);
+          first.innerHTML = first.innerHTML.replace(/^\s*\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br\s*\/?>\s*)?/i, '');
+          const title = document.createElement('p');
+          title.className = 'markdown-alert-title';
+          title.innerHTML = `${octicons[type]}${type.charAt(0)}${type.slice(1).toLowerCase()}`;
+          blockquote.insertBefore(title, blockquote.firstChild);
+          if (!first.textContent.trim() && !first.querySelector('img, a, code, em, strong')) first.remove();
+        });
+      }
+
+      function transformMathFences() {
+        els.preview.querySelectorAll('pre > code').forEach(code => {
+          const cls = code.className || '';
+          if (!/language-math\b/.test(cls)) return;
+          const div = document.createElement('div');
+          div.className = 'math-display';
+          div.textContent = `$$\n${code.textContent}\n$$`;
+          code.closest('pre').replaceWith(div);
+        });
+      }
+
+      function addHeadingIds() {
+        const used = new Map();
+        els.preview.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
+          if (h.id) return;
+          let slug = h.textContent.trim().toLowerCase()
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\p{Letter}\p{Number} _-]+/gu, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+          if (!slug) slug = 'heading';
+          const count = used.get(slug) || 0;
+          used.set(slug, count + 1);
+          h.id = count ? `${slug}-${count}` : slug;
+        });
+      }
+
+      function addColorChips() {
+        const isColor = text => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(text) || /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/i.test(text) || /^hsla?\(\s*\d+(?:deg)?\s*,\s*\d+%\s*,\s*\d+%(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/i.test(text);
+        els.preview.querySelectorAll('code').forEach(code => {
+          if (code.children.length) return;
+          const text = code.textContent.trim();
+          if (!isColor(text)) return;
+          const chip = document.createElement('span');
+          chip.className = 'ColorPreview';
+          chip.style.backgroundColor = text;
+          code.prepend(chip);
+        });
+      }
+
+      function transformDiagrams() {
+        const mermaidNodes = [];
+        els.preview.querySelectorAll('pre > code').forEach(code => {
+          const cls = code.className || '';
+          const pre = code.closest('pre');
+          if (/language-mermaid\b/.test(cls)) {
+            const div = document.createElement('div');
+            div.className = 'mermaid';
+            div.textContent = code.textContent;
+            pre.replaceWith(div);
+            mermaidNodes.push(div);
+          } else if (/language-geojson\b/.test(cls)) {
+            renderGeoJsonCodeBlock(pre, code.textContent, false);
+          } else if (/language-topojson\b/.test(cls)) {
+            renderGeoJsonCodeBlock(pre, code.textContent, true);
+          } else if (/language-stl\b/.test(cls)) {
+            pre.replaceWith(renderStl(code.textContent));
+          }
+        });
+        if (mermaidNodes.length && window.mermaid) {
+          try {
+            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
+            mermaid.run({ nodes: mermaidNodes }).catch(err => {
+              mermaidNodes.forEach(node => node.textContent = 'Mermaid render error: ' + (err && err.message ? err.message : err));
+            });
+          } catch (err) {
+            mermaidNodes.forEach(node => node.textContent = 'Mermaid render error: ' + err.message);
+          }
+        }
+      }
+
+      function diagramShell(title, body, hint = '') {
+        const shell = document.createElement('div');
+        shell.className = 'diagramShell';
+        const head = document.createElement('div');
+        head.className = 'diagramTitle';
+        head.textContent = title;
+        const wrap = document.createElement('div');
+        wrap.className = 'diagramBody';
+        wrap.appendChild(body);
+        if (hint) {
+          const p = document.createElement('div');
+          p.className = 'diagramHint';
+          p.textContent = hint;
+          wrap.appendChild(p);
+        }
+        shell.append(head, wrap);
+        return shell;
+      }
+
+      function diagramError(title, err) {
+        const pre = document.createElement('div');
+        pre.className = 'diagramError';
+        pre.textContent = err && err.message ? err.message : String(err);
+        return diagramShell(title, pre);
+      }
+
+      function renderGeoJsonCodeBlock(pre, source, isTopo) {
+        const title = isTopo ? 'TopoJSON' : 'GeoJSON';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'github-map';
+        wrapper.innerHTML = `<div class="diagram-title">${title} map preview</div><div class="map-canvas"></div>`;
+        pre.replaceWith(wrapper);
+        try {
+          const json = JSON.parse(source);
+          const geo = isTopo ? topoJsonToGeoJson(json) : json;
+          renderLeafletMap(wrapper.querySelector('.map-canvas'), geo);
+        } catch (err) {
+          wrapper.replaceWith(diagramError(title, err));
+        }
+      }
+
+      function topoJsonToGeoJson(json) {
+        if (!window.topojson || !json.objects) throw new Error('TopoJSON renderer is not loaded.');
+        const key = Object.keys(json.objects)[0];
+        if (!key) throw new Error('TopoJSON has no objects.');
+        return window.topojson.feature(json, json.objects[key]);
+      }
+
+      function renderLeafletMap(container, geojson) {
+        if (!window.L) throw new Error('Leaflet renderer is not loaded.');
+        container.textContent = '';
+        configureLeafletDefaultIcon();
+        const map = window.L.map(container, { scrollWheelZoom: false, attributionControl: true });
+        addRestoredTileLayer(map);
+        const layer = window.L.geoJSON(geojson, {
+          pointToLayer: (feature, latlng) => window.L.marker(latlng, {
+            icon: leafletInlineMarkerIcon(),
+            alt: '',
+            title: markerAltText(feature)
+          })
+        }).addTo(map);
+        const bounds = layer.getBounds && layer.getBounds();
+        const fit = () => {
+          map.invalidateSize();
+          if (bounds && bounds.isValid && bounds.isValid()) {
+            const northEast = bounds.getNorthEast && bounds.getNorthEast();
+            const southWest = bounds.getSouthWest && bounds.getSouthWest();
+            if (northEast && southWest && northEast.equals(southWest)) map.setView(bounds.getCenter(), 13);
+            else map.fitBounds(bounds.pad(0.25));
+          } else {
+            map.setView([0, 0], 2);
+          }
+        };
+        fit();
+        requestAnimationFrame(fit);
+        setTimeout(fit, 50);
+        setTimeout(() => map.invalidateSize(), 250);
+      }
+
+      function configureLeafletDefaultIcon() {
+        if (!window.L || !window.L.Icon || !window.L.Icon.Default || window.L.Icon.Default.__githubMdEditorConfigured) return;
+        window.L.Icon.Default.mergeOptions({
+          iconRetinaUrl: leafletMarkerIconUrl(),
+          iconUrl: leafletMarkerIconUrl(),
+          shadowUrl: leafletMarkerShadowUrl(),
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          tooltipAnchor: [16, -28],
+          shadowSize: [41, 41],
+          shadowAnchor: [12, 41],
+          className: 'github-map-inline-marker'
+        });
+        window.L.Icon.Default.__githubMdEditorConfigured = true;
+      }
+
+      function leafletInlineMarkerIcon() {
+        if (!window.L.Icon.Default.__githubMdEditorInlineMarker) {
+          window.L.Icon.Default.__githubMdEditorInlineMarker = window.L.divIcon({
+            className: 'github-map-div-marker',
+            html: leafletMarkerSvg(),
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            tooltipAnchor: [16, -28]
+          });
+        }
+        return window.L.Icon.Default.__githubMdEditorInlineMarker;
+      }
+
+      function leafletMarkerSvg() {
+        return `
+          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41" aria-hidden="true" focusable="false">
+            <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 8.839 12.5 28.5 12.5 28.5S25 21.339 25 12.5C25 5.596 19.404 0 12.5 0z" fill="#2a81cb" stroke="#1b4f8f" stroke-width="1"/>
+            <path d="M12.5 1.5c6.075 0 11 4.925 11 11 0 7.1-8.626 21.932-11 25.868C10.126 34.432 1.5 19.6 1.5 12.5c0-6.075 4.925-11 11-11z" fill="#3d9be9" opacity="0.55"/>
+            <circle cx="12.5" cy="12.5" r="5" fill="#fff" stroke="#1b4f8f" stroke-width="0.75"/>
+          </svg>
+        `.trim();
+      }
+
+      function leafletMarkerIconUrl() {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(leafletMarkerSvg());
+      }
+
+      function leafletMarkerShadowUrl() {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
+            <ellipse cx="22" cy="35" rx="15" ry="5" fill="#000" opacity="0.22"/>
+          </svg>
+        `.trim());
+      }
+
+      function markerAltText(feature) {
+        const props = feature && feature.properties ? feature.properties : {};
+        return String(props.name || props.title || 'Map marker');
+      }
+
+      function addRestoredTileLayer(map) {
+        const sources = [
+          {
+            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }
+          },
+          {
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap contributors' }
+          },
+          {
+            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            options: { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap contributors &copy; CARTO' }
+          },
+          {
+            url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            options: { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap contributors &copy; CARTO' }
+          }
+        ];
+        let layer = null;
+        let sourceIndex = 0;
+        let loaded = 0;
+        let failed = 0;
+        let switching = false;
+        const useSource = (index) => {
+          if (layer) {
+            try { map.removeLayer(layer); } catch (_) {}
+          }
+          sourceIndex = index;
+          loaded = 0;
+          failed = 0;
+          switching = false;
+          const source = sources[index];
+          layer = window.L.tileLayer(source.url, source.options)
+            .on('tileload', () => { loaded += 1; })
+            .on('tileerror', () => {
+              failed += 1;
+              if (!switching && loaded === 0 && failed >= 3 && index + 1 < sources.length) {
+                switching = true;
+                setTimeout(() => useSource(index + 1), 0);
+              }
+            });
+          layer.addTo(map);
+        };
+        useSource(0);
+        setTimeout(() => {
+          if (!loaded && !switching && sourceIndex + 1 < sources.length) useSource(sourceIndex + 1);
+        }, 2500);
+        return layer;
+      }
+
+      function extractGeoGeometries(obj) {
+        if (!obj) return [];
+        if (obj.type === 'FeatureCollection') return (obj.features || []).flatMap(extractGeoGeometries);
+        if (obj.type === 'Feature') return extractGeoGeometries(obj.geometry);
+        if (obj.type === 'GeometryCollection') return (obj.geometries || []).flatMap(extractGeoGeometries);
+        if (['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon'].includes(obj.type)) return [obj];
+        return [];
+      }
+
+      function allCoordsFromGeometry(geom, out = []) {
+        const recur = coords => {
+          if (!Array.isArray(coords)) return;
+          if (typeof coords[0] === 'number' && typeof coords[1] === 'number') out.push([coords[0], coords[1]]);
+          else coords.forEach(recur);
+        };
+        recur(geom.coordinates);
+        return out;
+      }
+
+      function drawGeometries(geoms) {
+        const width = 680, height = 360, pad = 24;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('width', String(width));
+        svg.setAttribute('height', String(height));
+        svg.setAttribute('role', 'img');
+        const bg = document.createElementNS(svg.namespaceURI, 'rect');
+        bg.setAttribute('x', '0'); bg.setAttribute('y', '0'); bg.setAttribute('width', String(width)); bg.setAttribute('height', String(height)); bg.setAttribute('fill', 'transparent');
+        svg.appendChild(bg);
+        const coords = geoms.flatMap(g => allCoordsFromGeometry(g));
+        if (!coords.length) {
+          const text = document.createElementNS(svg.namespaceURI, 'text');
+          text.setAttribute('x', String(width / 2)); text.setAttribute('y', String(height / 2)); text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', 'currentColor');
+          text.textContent = 'No drawable coordinates found';
+          svg.appendChild(text);
+          return svg;
+        }
+        let minX = Math.min(...coords.map(c => c[0])), maxX = Math.max(...coords.map(c => c[0]));
+        let minY = Math.min(...coords.map(c => c[1])), maxY = Math.max(...coords.map(c => c[1]));
+        if (minX === maxX) { minX -= 0.01; maxX += 0.01; }
+        if (minY === maxY) { minY -= 0.01; maxY += 0.01; }
+        const scale = Math.min((width - 2 * pad) / (maxX - minX), (height - 2 * pad) / (maxY - minY));
+        const project = ([x, y]) => [pad + (x - minX) * scale, height - pad - (y - minY) * scale];
+        const pathFor = points => points.map((p, i) => `${i ? 'L' : 'M'}${project(p).map(n => n.toFixed(2)).join(' ')}`).join(' ');
+        const drawLine = (points, close = false) => {
+          const path = document.createElementNS(svg.namespaceURI, 'path');
+          path.setAttribute('d', pathFor(points) + (close ? ' Z' : ''));
+          path.setAttribute('fill', close ? 'color-mix(in srgb, currentColor 12%, transparent)' : 'none');
+          path.setAttribute('stroke', 'currentColor');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('vector-effect', 'non-scaling-stroke');
+          svg.appendChild(path);
+        };
+        const drawPoint = point => {
+          const [x, y] = project(point);
+          const c = document.createElementNS(svg.namespaceURI, 'circle');
+          c.setAttribute('cx', x.toFixed(2)); c.setAttribute('cy', y.toFixed(2)); c.setAttribute('r', '5'); c.setAttribute('fill', 'currentColor');
+          svg.appendChild(c);
+        };
+        geoms.forEach(g => {
+          if (g.type === 'Point') drawPoint(g.coordinates);
+          if (g.type === 'MultiPoint') g.coordinates.forEach(drawPoint);
+          if (g.type === 'LineString') drawLine(g.coordinates);
+          if (g.type === 'MultiLineString') g.coordinates.forEach(line => drawLine(line));
+          if (g.type === 'Polygon') g.coordinates.forEach(ring => drawLine(ring, true));
+          if (g.type === 'MultiPolygon') g.coordinates.forEach(poly => poly.forEach(ring => drawLine(ring, true)));
+        });
+        return svg;
+      }
+
+      function topoToGeoGeometries(topology) {
+        if (!topology || topology.type !== 'Topology') throw new Error('Expected a TopoJSON Topology object.');
+        const transform = topology.transform || null;
+        const transformPoint = point => {
+          if (!transform || !Array.isArray(point)) return point;
+          return [point[0] * transform.scale[0] + transform.translate[0], point[1] * transform.scale[1] + transform.translate[1]];
+        };
+        const decodeArc = arc => {
+          let x = 0, y = 0;
+          return arc.map(pair => {
+            x += pair[0]; y += pair[1];
+            return transformPoint([x, y]);
+          });
+        };
+        const arcs = (topology.arcs || []).map(decodeArc);
+        const lineForIndex = idx => {
+          if (idx >= 0) return arcs[idx] || [];
+          return (arcs[~idx] || []).slice().reverse();
+        };
+        const stitch = ids => ids.flatMap((idx, i) => {
+          const line = lineForIndex(idx);
+          return i ? line.slice(1) : line;
+        });
+        const out = [];
+        const convert = geom => {
+          if (!geom) return;
+          if (geom.type === 'GeometryCollection') return (geom.geometries || []).forEach(convert);
+          if (geom.type === 'LineString') out.push({ type: 'LineString', coordinates: stitch(geom.arcs || []) });
+          if (geom.type === 'MultiLineString') out.push({ type: 'MultiLineString', coordinates: (geom.arcs || []).map(stitch) });
+          if (geom.type === 'Polygon') out.push({ type: 'Polygon', coordinates: (geom.arcs || []).map(stitch) });
+          if (geom.type === 'MultiPolygon') out.push({ type: 'MultiPolygon', coordinates: (geom.arcs || []).map(poly => poly.map(stitch)) });
+          if (geom.type === 'Point') out.push({ type: 'Point', coordinates: transformPoint(geom.coordinates) });
+          if (geom.type === 'MultiPoint') out.push({ type: 'MultiPoint', coordinates: (geom.coordinates || []).map(transformPoint) });
+        };
+        Object.values(topology.objects || {}).forEach(convert);
+        return out;
+      }
+
+      function renderStl(text) {
+        try {
+          const triangles = parseAsciiStlTriangles(text);
+          const canvas = document.createElement('canvas');
+          canvas.className = 'stlCanvas';
+          canvas.setAttribute('aria-label', 'ASCII STL model preview');
+          createStlCanvasViewer(canvas, triangles);
+          return diagramShell('STL', canvas, 'Drag the shaded model to rotate it.');
+        } catch (err) {
+          return diagramError('STL', err);
+        }
+      }
+
+      function parseAsciiStlTriangles(source) {
+        const pending = [];
+        const triangles = [];
+        String(source || '').split(/\r?\n/).forEach(line => {
+          const match = line.trim().match(/^vertex\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)/i);
+          if (!match) return;
+          pending.push(match.slice(1, 4).map(Number));
+          if (pending.length === 3) triangles.push(pending.splice(0, 3));
+        });
+        if (!triangles.length) throw new Error('No ASCII STL triangles found.');
+        return triangles;
+      }
+
+      function createStlCanvasViewer(canvas, triangles) {
+        const points = triangles.flat();
+        const center = [0, 1, 2].map(axis => points.reduce((sum, point) => sum + point[axis], 0) / points.length);
+        const radius = Math.max(1e-9, ...points.map(point => Math.hypot(point[0] - center[0], point[1] - center[1], point[2] - center[2])));
+        const state = { rx: -0.7, ry: 0.55, dragging: false, x: 0, y: 0 };
+        const rotate = point => {
+          let x = (point[0] - center[0]) / radius;
+          let y = (point[1] - center[1]) / radius;
+          let z = (point[2] - center[2]) / radius;
+          const cy = Math.cos(state.ry), sy = Math.sin(state.ry), cx = Math.cos(state.rx), sx = Math.sin(state.rx);
+          [x, z] = [x * cy + z * sy, -x * sy + z * cy];
+          [y, z] = [y * cx - z * sx, y * sx + z * cx];
+          return [x, y, z];
+        };
+        const draw = () => {
+          const rect = canvas.getBoundingClientRect();
+          const width = Math.max(320, rect.width || 720);
+          const height = Math.max(220, rect.height || 360);
+          const dpr = Math.max(1, window.devicePixelRatio || 1);
+          if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+          }
+          const ctx = canvas.getContext('2d');
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+          const color = getComputedStyle(canvas).color || 'currentColor';
+          const scale = Math.min(width, height) * 0.38;
+          const projected = triangles.map(tri => {
+            const rotated = tri.map(rotate);
+            const avgZ = rotated.reduce((sum, point) => sum + point[2], 0) / 3;
+            const normal = triangleNormal(rotated);
+            return { avgZ, normal, pts: rotated.map(([x, y]) => [width / 2 + x * scale, height / 2 - y * scale]) };
+          }).sort((a, b) => a.avgZ - b.avgZ);
+          projected.forEach(tri => {
+            ctx.beginPath();
+            ctx.moveTo(tri.pts[0][0], tri.pts[0][1]);
+            ctx.lineTo(tri.pts[1][0], tri.pts[1][1]);
+            ctx.lineTo(tri.pts[2][0], tri.pts[2][1]);
+            ctx.closePath();
+            const shade = Math.max(0.08, Math.min(0.42, 0.16 + Math.abs(tri.normal[2]) * 0.26));
+            ctx.globalAlpha = shade;
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.globalAlpha = 0.58;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          });
+          ctx.globalAlpha = 1;
+        };
+        canvas.addEventListener('pointerdown', event => { state.dragging = true; state.x = event.clientX; state.y = event.clientY; canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId); });
+        canvas.addEventListener('pointermove', event => {
+          if (!state.dragging) return;
+          state.ry += (event.clientX - state.x) * 0.01;
+          state.rx += (event.clientY - state.y) * 0.01;
+          state.x = event.clientX;
+          state.y = event.clientY;
+          draw();
+        });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => canvas.addEventListener(type, () => { state.dragging = false; }));
+        if (window.ResizeObserver) new ResizeObserver(draw).observe(canvas);
+        else window.addEventListener('resize', draw);
+        requestAnimationFrame(draw);
+        draw();
+      }
+
+      function triangleNormal(tri) {
+        const a = tri[0], b = tri[1], c = tri[2];
+        const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+        const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+        const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        const length = Math.hypot(nx, ny, nz) || 1;
+        return [nx / length, ny / length, nz / length];
+      }
+
+      function splitMarkdownRow(line) {
+        let s = line.trim();
+        if (s.startsWith('|')) s = s.slice(1);
+        if (s.endsWith('|')) s = s.slice(0, -1);
+        const cells = [];
+        let current = '', escaped = false;
+        for (const ch of s) {
+          if (escaped) { current += ch; escaped = false; continue; }
+          if (ch === '\\') { current += ch; escaped = true; continue; }
+          if (ch === '|') { cells.push(current.trim()); current = ''; continue; }
+          current += ch;
+        }
+        cells.push(current.trim());
+        return cells;
+      }
+
+      function isDelimiterRow(line) {
+        const cells = splitMarkdownRow(line);
+        return cells.length > 0 && cells.every(cell => /^:?-{3,}:?$/.test(cell.replace(/\s+/g, '')));
+      }
+
+      function delimiterFor(cell) {
+        const s = cell.replace(/\s+/g, '');
+        if (/^:-+:$/.test(s)) return 'center';
+        if (/^-+:$/.test(s)) return 'right';
+        if (/^:-+$/.test(s)) return 'left';
+        return 'none';
+      }
+
+      function alignMarker(type, width) {
+        const w = Math.max(3, width);
+        if (type === 'left') return ':' + '-'.repeat(w - 1);
+        if (type === 'right') return '-'.repeat(w - 1) + ':';
+        if (type === 'center') return ':' + '-'.repeat(Math.max(1, w - 2)) + ':';
+        return '-'.repeat(w);
+      }
+
+      function formatTableLines(lines) {
+        const rows = lines.map(splitMarkdownRow);
+        if (rows.length < 2) return lines;
+        const colCount = Math.max(...rows.map(r => r.length));
+        const aligns = splitMarkdownRow(lines[1]).map(delimiterFor);
+        rows.forEach(r => { while (r.length < colCount) r.push(''); });
+        while (aligns.length < colCount) aligns.push('none');
+        const widths = Array.from({ length: colCount }, (_, i) => Math.max(3, ...rows.map((r, idx) => idx === 1 ? 3 : visibleLength(r[i]))));
+        return rows.map((r, idx) => {
+          const cells = r.map((cell, i) => idx === 1 ? alignMarker(aligns[i], widths[i]) : padCell(cell, widths[i], aligns[i]));
+          return '| ' + cells.join(' | ') + ' |';
+        });
+      }
+
+      function visibleLength(text) {
+        return Array.from(String(text).replace(/\\\|/g, '|')).length;
+      }
+
+      function padCell(text, width, align) {
+        const len = visibleLength(text);
+        const diff = Math.max(0, width - len);
+        if (align === 'right') return ' '.repeat(diff) + text;
+        if (align === 'center') {
+          const left = Math.floor(diff / 2), right = diff - left;
+          return ' '.repeat(left) + text + ' '.repeat(right);
+        }
+        return text + ' '.repeat(diff);
+      }
+
+      function formatMarkdownTables(text) {
+        const lines = text.split('\n');
+        const out = [];
+        let i = 0, inFence = false;
+        while (i < lines.length) {
+          const line = lines[i];
+          if (/^\s*(```|~~~)/.test(line)) {
+            inFence = !inFence;
+            out.push(line); i++; continue;
+          }
+          if (!inFence && line.includes('|') && i + 1 < lines.length && isDelimiterRow(lines[i + 1])) {
+            const block = [line, lines[i + 1]];
+            i += 2;
+            while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') block.push(lines[i++]);
+            out.push(...formatTableLines(block));
+            continue;
+          }
+          out.push(line); i++;
+        }
+        return out.join('\n');
+      }
+
+      function markdownTableFromRows(rows) {
+        const clean = rows
+          .filter(row => Array.isArray(row))
+          .map(row => row.map(markdownTableCell));
+        if (!clean.length) return '';
+        const colCount = Math.max(1, ...clean.map(row => row.length));
+        clean.forEach(row => { while (row.length < colCount) row.push(''); });
+        if (clean.length === 1) clean.push(Array.from({ length: colCount }, () => ''));
+        const lines = [
+          markdownTableLine(clean[0]),
+          markdownTableLine(Array.from({ length: colCount }, () => '---')),
+          ...clean.slice(1).map(markdownTableLine)
+        ];
+        return formatTableLines(lines).join('\n');
+      }
+
+      function markdownTableCell(value) {
+        return String(value == null ? '' : value).replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
+      }
+
+      function markdownTableLine(cells) {
+        return '| ' + cells.join(' | ') + ' |';
+      }
+
+      function selectedPasteDelimiter(raw) {
+        const requested = els.pasteDelimiter ? els.pasteDelimiter.value : 'auto';
+        if (requested === 'auto') return detectDelimiter(raw);
+        if (requested === 'tab') return '\t';
+        return requested;
+      }
+
+      function detectDelimiter(text) {
+        const sample = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').slice(0, 10).join('\n');
+        const counts = ['\t', ',', ';'].map(delimiter => [delimiter, countDelimiterOutsideQuotes(sample, delimiter)]);
+        counts.sort((a, b) => b[1] - a[1]);
+        return counts[0][1] ? counts[0][0] : '\t';
+      }
+
+      function countDelimiterOutsideQuotes(text, delimiter) {
+        let count = 0, inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === '"') {
+            if (inQuotes && text[i + 1] === '"') i++;
+            else inQuotes = !inQuotes;
+          } else if (!inQuotes && ch === delimiter) {
+            count++;
+          }
+        }
+        return count;
+      }
+
+      function parseDelimited(text, delimiter = detectDelimiter(text)) {
+        const input = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const rows = [];
+        let row = [], field = '', inQuotes = false;
+        for (let i = 0; i < input.length; i++) {
+          const ch = input[i];
+          if (inQuotes) {
+            if (ch === '"' && input[i + 1] === '"') { field += '"'; i++; }
+            else if (ch === '"') inQuotes = false;
+            else field += ch;
+          } else {
+            if (ch === '"') inQuotes = true;
+            else if (ch === delimiter) { row.push(field); field = ''; }
+            else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+            else field += ch;
+          }
+        }
+        if (field.length || row.length || input.endsWith(delimiter)) { row.push(field); rows.push(row); }
+        return rows.filter(row => row.some(cell => String(cell).trim() !== ''));
+      }
+
+      function getCurrentTableText() {
+        const value = els.editor.value;
+        const start = els.editor.selectionStart;
+        const end = els.editor.selectionEnd;
+        if (end > start) return value.slice(start, end);
+        const lines = value.split('\n');
+        let pos = 0, row = 0;
+        for (; row < lines.length; row++) {
+          const next = pos + lines[row].length + 1;
+          if (start < next) break;
+          pos = next;
+        }
+        let top = row, bottom = row;
+        while (top > 0 && lines[top - 1].includes('|')) top--;
+        while (bottom + 1 < lines.length && lines[bottom + 1].includes('|')) bottom++;
+        const block = lines.slice(top, bottom + 1);
+        if (block.length >= 2 && block.some(isDelimiterRow)) return block.join('\n');
+        return '';
+      }
+
+      function parseMarkdownTable(text) {
+        const lines = text.split(/\r?\n/).filter(line => line.includes('|'));
+        const delimIdx = lines.findIndex(isDelimiterRow);
+        if (delimIdx <= 0) throw new Error('No Markdown table found at the selection/cursor.');
+        const rows = lines.map(splitMarkdownRow).filter((_, i) => i !== delimIdx);
+        const colCount = Math.max(...rows.map(r => r.length));
+        rows.forEach(r => { while (r.length < colCount) r.push(''); });
+        return rows;
+      }
+
+      function rowsToTsv(rows) {
+        return rows.map(row => row.map(cell => String(cell).replace(/\t/g, ' ').replace(/\r?\n/g, ' ')).join('\t')).join('\n');
+      }
+
+      function rowsToDataTable(rows) {
+        if (rows.length < 1) throw new Error('No rows found.');
+        const headers = rows[0].map((h, i) => String(h || `V${i + 1}`).trim() || `V${i + 1}`);
+        const data = rows.slice(1);
+        const cols = headers.map((h, i) => {
+          const vals = data.map(r => r[i] ?? '');
+          const numeric = vals.length && vals.every(v => String(v).trim() === '' || /^[-+]?\d*\.?\d+(?:e[-+]?\d+)?$/i.test(String(v).trim()));
+          const body = numeric ? vals.map(v => String(v).trim() === '' ? 'NA_real_' : String(v).trim()).join(', ') : vals.map(v => JSON.stringify(String(v))).join(', ');
+          return `${rName(h)} = c(${body})`;
+        });
+        return `data.table::data.table(\n  ${cols.join(',\n  ')}\n)`;
+      }
+
+      function rName(name) {
+        return /^[A-Za-z.][A-Za-z0-9._]*$/.test(name) && !/^\d/.test(name) ? name : '`' + String(name).replace(/`/g, '\\`') + '`';
+      }
+
+      async function writeClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_) {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          ta.remove();
+          return ok;
+        }
+      }
+
+      function openPasteModal() {
+        els.pasteArea.value = '';
+        if (els.pasteDelimiter) els.pasteDelimiter.value = 'auto';
+        els.pasteModal.classList.add('show');
+        setTimeout(() => els.pasteArea.focus(), 0);
+      }
+
+      function closePasteModal() {
+        els.pasteModal.classList.remove('show');
+        els.editor.focus();
+      }
+
+      function insertPastedTable() {
+        const text = els.pasteArea.value || '';
+        if (!text.trim()) { setStatus('Paste area is empty.'); els.pasteArea.focus(); return; }
+        const rows = parseDelimited(text, selectedPasteDelimiter(text));
+        if (!rows.length) { setStatus('No CSV/TSV rows found.'); els.pasteArea.focus(); return; }
+        const table = markdownTableFromRows(rows);
+        if (!table) { setStatus('Could not convert CSV/TSV data to a Markdown table.'); els.pasteArea.focus(); return; }
+        replaceSelection(table + '\n');
+        closePasteModal();
+        setStatus(`Inserted ${rows.length.toLocaleString()} row${rows.length === 1 ? '' : 's'} as a Markdown table.`);
+      }
+
+      async function backendJson(path, payload) {
+        const response = await fetch(path, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Local-Editor-Token': LOCAL_BACKEND.token || ''
+          },
+          body: JSON.stringify(payload || {})
+        });
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+        if (!response.ok || !data || data.ok === false) {
+          const message = data && data.error ? data.error : `${response.status} ${response.statusText}`;
+          throw new Error(message);
+        }
+        return data;
+      }
+
+      function pathBaseName(path) {
+        return String(path || '').split(/[\\/]/).filter(Boolean).pop() || '';
+      }
+
+      function setCurrentLocalPath(path, name) {
+        currentLocalPath = path || '';
+        if (name || path) updateFileName(name || pathBaseName(path) || 'untitled.md');
+      }
+
+      async function openMarkdownFromBackend() {
+        if (!LOCAL_BACKEND.token) {
+          setStatus('This page must be opened through local_gfm_editor.py for real local file I/O.');
+          return;
+        }
+        flushPendingHistory();
+        setStatus('Choose a Markdown file…');
+        try {
+          const result = await backendJson('/api/open', { path: currentLocalPath || '' });
+          if (result.canceled) { setStatus('Open canceled.'); return; }
+          setCurrentLocalPath(result.path || '', result.name || 'untitled.md');
+          setEditorValue(String(result.text || ''), 0, 0, 'reset');
+          setStatus(`Opened ${result.path || result.name}.`);
+        } catch (err) {
+          setStatus(`Open failed: ${err && err.message ? err.message : err}`);
+        }
+      }
+
+      async function saveMarkdown(saveAs = false) {
+        if (!LOCAL_BACKEND.token) {
+          setStatus('This page must be opened through local_gfm_editor.py for real local file I/O.');
+          return;
+        }
+        flushPendingHistory();
+        const name = normalizeFileName(els.fileNameInput.value);
+        updateFileName(name);
+        const currentName = pathBaseName(currentLocalPath);
+        const nameChanged = !!currentLocalPath && !!currentName && name !== currentName;
+        const mustAskForPath = !!saveAs || !currentLocalPath;
+        setStatus(mustAskForPath ? 'Choose where to save…' : (nameChanged ? `Saving as ${name}…` : 'Saving…'));
+        try {
+          const result = await backendJson('/api/save', {
+            path: currentLocalPath || '',
+            suggested_name: name,
+            text: els.editor.value,
+            save_as: mustAskForPath
+          });
+          if (result.canceled) { setStatus('Save canceled.'); return; }
+          setCurrentLocalPath(result.path || currentLocalPath, result.name || name);
+          saveCache();
+          setStatus(`Saved ${result.path || result.name}.`);
+        } catch (err) {
+          setStatus(`Save failed: ${err && err.message ? err.message : err}`);
+        }
+      }
+
+      function openFile(file) {
+        if (!file) return;
+        setStatus('Use Open to select a real local file through the backend. Browser drops do not expose a trusted save path.');
+      }
+
+      function setupDragDrop() {
+        let depth = 0;
+        document.addEventListener('dragenter', e => { e.preventDefault(); depth++; document.body.classList.add('dragging'); });
+        document.addEventListener('dragover', e => { e.preventDefault(); });
+        document.addEventListener('dragleave', e => { depth = Math.max(0, depth - 1); if (!depth) document.body.classList.remove('dragging'); });
+        document.addEventListener('drop', e => {
+          e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+          const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          openFile(file);
+        });
+      }
+
+      function setupScrollSync() {
+        els.editor.addEventListener('scroll', () => {
+          if (!els.syncToggle.checked || syncFrom === 'preview') return;
+          syncFrom = 'editor';
+          const ratio = els.editor.scrollTop / Math.max(1, els.editor.scrollHeight - els.editor.clientHeight);
+          els.previewScroller.scrollTop = ratio * Math.max(1, els.previewScroller.scrollHeight - els.previewScroller.clientHeight);
+          requestAnimationFrame(() => { syncFrom = null; });
+        });
+        els.previewScroller.addEventListener('scroll', () => {
+          if (!els.syncToggle.checked || syncFrom === 'editor') return;
+          syncFrom = 'preview';
+          const ratio = els.previewScroller.scrollTop / Math.max(1, els.previewScroller.scrollHeight - els.previewScroller.clientHeight);
+          els.editor.scrollTop = ratio * Math.max(1, els.editor.scrollHeight - els.editor.clientHeight);
+          requestAnimationFrame(() => { syncFrom = null; });
+        });
+      }
+
+      function wireEvents() {
+        els.editor.addEventListener('input', () => {
+          if (isApplyingHistory) return;
+          updateStats();
+          requestRender();
+          saveCache();
+          clearTimeout(inputHistoryTimer);
+          inputHistoryTimer = setTimeout(() => pushHistory(currentState()), 450);
+        });
+
+        els.editor.addEventListener('keydown', e => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            replaceSelection('  ');
+          }
+          const key = e.key.toLowerCase();
+          if (e.ctrlKey && !e.altKey && key === 'z') {
+            e.preventDefault();
+            e.shiftKey ? redo() : undo();
+          }
+          if (e.ctrlKey && !e.altKey && key === 'y') {
+            e.preventDefault();
+            redo();
+          }
+          if (e.ctrlKey && !e.altKey && key === 's') {
+            e.preventDefault();
+            saveMarkdown(e.shiftKey);
+          }
+        });
+
+        document.addEventListener('keydown', e => {
+          const key = e.key.toLowerCase();
+          if (e.target === els.editor || e.target === els.pasteArea || e.target.tagName === 'INPUT') return;
+          if (e.ctrlKey && !e.altKey && key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+          if (e.ctrlKey && !e.altKey && key === 'y') { e.preventDefault(); redo(); }
+          if (e.ctrlKey && !e.altKey && key === 's') { e.preventDefault(); saveMarkdown(e.shiftKey); }
+        });
+
+        document.querySelectorAll('[data-cmd]').forEach(btn => btn.addEventListener('click', () => insertCommand(btn.dataset.cmd)));
+        els.insertAlertBtn.addEventListener('click', insertAlert);
+        els.openBtn.addEventListener('click', openMarkdownFromBackend);
+        els.fileInput.addEventListener('change', () => openFile(els.fileInput.files[0]));
+        els.saveBtn.addEventListener('click', event => saveMarkdown(event.shiftKey));
+        els.saveAsBtn.addEventListener('click', () => saveMarkdown(true));
+        els.undoBtn.addEventListener('click', undo);
+        els.redoBtn.addEventListener('click', redo);
+        els.exampleBtn.addEventListener('click', () => {
+          currentLocalPath = '';
+          updateFileName('github-markdown-example.md');
+          setEditorValue(EXAMPLE, 0, 0, 'reset');
+          setStatus('Loaded example. Save will ask for a real local path.');
+        });
+        els.clearCacheBtn.addEventListener('click', () => {
+          try { localStorage.removeItem(CACHE_TEXT); localStorage.removeItem(CACHE_NAME); } catch (_) {}
+          setStatus('Local cache cleared. Current content kept.');
+        });
+        els.fileNameInput.addEventListener('input', () => updateFileName(els.fileNameInput.value));
+        els.highlightToggle.addEventListener('change', requestRender);
+        els.formatTablesBtn.addEventListener('click', () => {
+          flushPendingHistory();
+          const old = els.editor.value;
+          const formatted = formatMarkdownTables(old);
+          if (formatted === old) { setStatus('No Markdown pipe tables changed.'); return; }
+          setEditorValue(formatted, els.editor.selectionStart, els.editor.selectionEnd, 'push');
+          setStatus('Aligned Markdown tables.');
+        });
+        els.pasteDataBtn.addEventListener('click', openPasteModal);
+        els.closePasteBtn.addEventListener('click', closePasteModal);
+        els.pasteModal.addEventListener('click', e => { if (e.target === els.pasteModal) closePasteModal(); });
+        els.pasteArea.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); insertPastedTable(); } });
+        els.insertPastedTableBtn.addEventListener('click', insertPastedTable);
+        els.copyTsvBtn.addEventListener('click', async () => {
+          try {
+            const rows = parseMarkdownTable(getCurrentTableText());
+            await writeClipboard(rowsToTsv(rows));
+            setStatus('Copied Markdown table as TSV.');
+          } catch (err) { setStatus(err.message); }
+        });
+        els.copyRBtn.addEventListener('click', async () => {
+          try {
+            const rows = parseMarkdownTable(getCurrentTableText());
+            await writeClipboard(rowsToDataTable(rows));
+            setStatus('Copied Markdown table as data.table literal.');
+          } catch (err) { setStatus(err.message); }
+        });
+        els.copyHtmlBtn.addEventListener('click', async () => {
+          await writeClipboard(els.preview.innerHTML);
+          setStatus('Copied rendered HTML.');
+        });
+      }
+
+      function init() {
+        if (window.mermaid) mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+        worker = createWorker();
+        const cachedText = (() => { try { return localStorage.getItem(CACHE_TEXT); } catch (_) { return null; } })();
+        const cachedName = (() => { try { return localStorage.getItem(CACHE_NAME); } catch (_) { return null; } })();
+        if (typeof LOCAL_BACKEND.startupText === 'string') {
+          currentLocalPath = LOCAL_BACKEND.startupPath || '';
+          updateFileName(LOCAL_BACKEND.startupName || (currentLocalPath ? currentLocalPath.split(/[\/]/).pop() : 'untitled.md'));
+          els.editor.value = LOCAL_BACKEND.startupText;
+        } else {
+          updateFileName(cachedName || 'untitled.md');
+          els.editor.value = cachedText || EXAMPLE;
+        }
+        updateStats();
+        resetHistory();
+        requestRender();
+        wireEvents();
+        setupDragDrop();
+        setupScrollSync();
+        setStatus(typeof LOCAL_BACKEND.startupText === 'string' ? `Ready. Opened ${LOCAL_BACKEND.startupName || 'startup file'}. Backend 2026-06-29-v4-filename-authoritative.` : (cachedText ? `Restored from local cache. Backend 2026-06-29-v4-filename-authoritative.` : `Ready. Backend 2026-06-29-v4-filename-authoritative.`));
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
