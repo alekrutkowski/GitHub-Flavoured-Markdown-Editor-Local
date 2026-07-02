@@ -282,19 +282,62 @@
       white-space: nowrap;
     }
 
-    #editor {
+    .editorWrap {
       flex: 1;
-      width: 100%;
+      position: relative;
+      min-width: 0;
       min-height: 0;
+      background: var(--panel);
+    }
+
+    #editor,
+    #editorHighlights {
+      position: absolute;
+      inset: 0;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      padding: 16px;
+      font: 14px/1.55 var(--font-mono);
+      tab-size: 2;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    #editor {
+      z-index: 1;
       resize: none;
       border: 0;
       outline: none;
-      padding: 16px;
-      font: 14px/1.55 var(--font-mono);
       color: var(--text);
-      background: var(--panel);
-      tab-size: 2;
+      background: transparent;
       overflow: auto;
+    }
+
+    #editorHighlights {
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      color: transparent;
+    }
+
+    #editorHighlightContent {
+      min-height: 100%;
+      transform-origin: 0 0;
+    }
+
+    #editorHighlightContent mark {
+      border-radius: 3px;
+      color: transparent;
+      background: color-mix(in srgb, #ffd33d 52%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, #ffd33d 68%, transparent);
+    }
+
+    #editorHighlightContent mark.current {
+      background: color-mix(in srgb, #ffab70 64%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, #fb8500 76%, transparent);
     }
 
     #previewScroller {
@@ -411,6 +454,118 @@
     .diagramBody { padding: 10px; overflow: auto; }
     .diagramBody svg, .diagramBody canvas { display: block; max-width: 100%; margin: 0 auto; background: var(--panel); border-radius: 6px; }
     .diagramBody canvas.stlCanvas { width: 100%; height: 360px; cursor: grab; touch-action: none; }
+
+    .stlViewerFrame {
+      position: relative;
+      min-height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--panel) 82%, #ffffff 18%), var(--panel-subtle));
+    }
+
+    .diagramBody .stlViewerFrame canvas.stlCanvas {
+      width: 100%;
+      height: 360px;
+      max-width: none;
+      margin: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .stlControlCluster {
+      position: absolute;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+      border-radius: 7px;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      box-shadow: 0 4px 14px rgba(27, 31, 36, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .stlModeControls { top: 8px; right: 8px; }
+    .stlRotateControls { left: 8px; bottom: 8px; }
+    .stlPanZoomControls { right: 8px; bottom: 8px; }
+
+    .stlControlButton {
+      min-width: 28px;
+      height: 26px;
+      padding: 0 7px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .stlControlButton:hover { background: var(--button-hover); }
+    .stlControlButton[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .stlControlSep { width: 1px; height: 18px; background: var(--border); margin: 0 1px; }
+
+    .findRow {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 7px;
+      align-items: center;
+      min-width: 0;
+      margin-bottom: 8px;
+    }
+
+    .findRow:last-child { margin-bottom: 0; }
+    .findRow .input { flex: 1 1 130px; min-width: 0; height: 32px; }
+    .findActionRow { flex-wrap: wrap; }
+    .findActionRow .button { white-space: nowrap; }
+    .findCount { color: var(--muted); font-size: 12px; min-width: 54px; white-space: nowrap; }
+    .findRow .input.findInvalid {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 18%, transparent);
+    }
+    .findReplaceOnly { display: none; }
+    .findModal.replaceMode .findReplaceOnly { display: inline-flex; }
+
+    #findModal {
+      padding: 0;
+      background: transparent;
+      pointer-events: none;
+      place-items: initial;
+    }
+
+    #findModal.show { display: block; }
+
+    .modal.findModal {
+      position: fixed;
+      top: 72px;
+      right: 18px;
+      left: auto;
+      width: min(380px, calc(100vw - 24px));
+      min-width: min(300px, calc(100vw - 24px));
+      max-height: min(72vh, 560px);
+      pointer-events: auto;
+      border-radius: 10px;
+      resize: both;
+    }
+
+    .findModal .modalHead {
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .findModal .modalBody {
+      padding: 10px;
+      gap: 7px;
+    }
+
+    .modal.findModal.dragging {
+      opacity: 0.96;
+      user-select: none;
+    }
 
     .markdown-body .github-map {
       margin: 16px 0;
@@ -736,6 +891,9 @@
         <button class="button small" id="copyTsvBtn" type="button" title="Copy the selected or current Markdown table as TSV"><span class="ico">⧉</span><span class="label">TSV</span></button>
         <button class="button small" id="copyRBtn" type="button" title="Copy the selected or current Markdown table as an R data.table literal"><span class="ico">R</span><span class="label">DT</span></button>
         <button class="button small" id="copyHtmlBtn" type="button" title="Copy rendered preview HTML"><span class="ico">⌬</span><span class="label">HTML</span></button>
+        <button class="button small" id="findBtn" type="button" title="Find text, Ctrl+F"><span class="ico">⌕</span><span class="label">Find</span></button>
+        <button class="button small" id="findAllBtn" type="button" title="Find all matches"><span class="ico">≣</span><span class="label">All</span></button>
+        <button class="button small" id="replaceBtn" type="button" title="Find and replace, Ctrl+H"><span class="ico">↔</span><span class="label">Replace</span></button>
       </div>
     </div>
   </div>
@@ -743,7 +901,10 @@
   <main class="main">
     <section class="pane">
       <div class="paneHead"><span id="fileName">untitled.md</span><span id="docStats">0 bytes</span></div>
-      <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      <div class="editorWrap">
+        <div id="editorHighlights" aria-hidden="true"><div id="editorHighlightContent"></div></div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
     </section>
 
     <section class="pane">
@@ -768,6 +929,32 @@
 <script id="localBackendBoot">
 window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static"};
 </script>
+
+  <div class="modalBackdrop" id="findModal" role="dialog" aria-modal="false" aria-labelledby="findTitle">
+    <div class="modal findModal" id="findDialog">
+      <div class="modalHead" id="findDragHandle"><strong id="findTitle">Find in Markdown source</strong><div class="modalControls"><button class="button small" id="closeFindBtn" type="button" title="Close"><span class="ico">×</span></button></div></div>
+      <div class="modalBody">
+        <div class="findRow">
+          <input class="input" id="findInput" type="text" placeholder="Find text" autocomplete="off">
+          <span class="findCount" id="findCount">0 matches</span>
+          <label class="check" title="Match uppercase and lowercase exactly"><input type="checkbox" id="findCaseToggle"><span>case</span></label>
+          <label class="check" title="Use JavaScript regular expression syntax. Flags are controlled by the toggles here."><input type="checkbox" id="findRegexToggle"><span>regex</span></label>
+        </div>
+        <div class="findRow findReplaceOnly">
+          <input class="input" id="replaceInput" type="text" placeholder="Replace with" autocomplete="off">
+        </div>
+        <div class="findRow findActionRow">
+          <button class="button" id="findPrevBtn" type="button"><span class="ico">↑</span><span>Previous</span></button>
+          <button class="button" id="findNextBtn" type="button"><span class="ico">↓</span><span>Next</span></button>
+          <button class="button" id="findAllModalBtn" type="button"><span class="ico">≣</span><span>Find all</span></button>
+          <button class="button findReplaceOnly" id="replaceOneBtn" type="button"><span class="ico">↔</span><span>Replace</span></button>
+          <button class="button findReplaceOnly" id="replaceAllBtn" type="button"><span class="ico">⇄</span><span>Replace all</span></button>
+        </div>
+        <div class="modalHelp">Drag this panel by its title bar. Find all keeps every match highlighted until this panel is closed. Regex mode uses JavaScript pattern syntax; replacement supports captures like $1 and $&. Esc closes the panel only while focus is inside it.</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (() => {
       'use strict';
@@ -777,6 +964,8 @@ window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startu
 
       const els = {
         editor: document.getElementById('editor'),
+        editorHighlights: document.getElementById('editorHighlights'),
+        editorHighlightContent: document.getElementById('editorHighlightContent'),
         preview: document.getElementById('preview'),
         previewScroller: document.getElementById('previewScroller'),
         fileName: document.getElementById('fileName'),
@@ -799,6 +988,23 @@ window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startu
         copyTsvBtn: document.getElementById('copyTsvBtn'),
         copyRBtn: document.getElementById('copyRBtn'),
         copyHtmlBtn: document.getElementById('copyHtmlBtn'),
+        findBtn: document.getElementById('findBtn'),
+        findAllBtn: document.getElementById('findAllBtn'),
+        replaceBtn: document.getElementById('replaceBtn'),
+        findModal: document.getElementById('findModal'),
+        findDialog: document.getElementById('findDialog'),
+        findDragHandle: document.getElementById('findDragHandle'),
+        findInput: document.getElementById('findInput'),
+        replaceInput: document.getElementById('replaceInput'),
+        findCount: document.getElementById('findCount'),
+        findCaseToggle: document.getElementById('findCaseToggle'),
+        findRegexToggle: document.getElementById('findRegexToggle'),
+        findPrevBtn: document.getElementById('findPrevBtn'),
+        findNextBtn: document.getElementById('findNextBtn'),
+        findAllModalBtn: document.getElementById('findAllModalBtn'),
+        replaceOneBtn: document.getElementById('replaceOneBtn'),
+        replaceAllBtn: document.getElementById('replaceAllBtn'),
+        closeFindBtn: document.getElementById('closeFindBtn'),
         insertAlertBtn: document.getElementById('insertAlertBtn'),
         alertKind: document.getElementById('alertKind'),
         pasteModal: document.getElementById('pasteModal'),
@@ -1042,6 +1248,7 @@ GitHub supports raw HTML details blocks in Markdown files.
         updateStats();
         requestRender();
         saveCache();
+        refreshFindAfterSourceChange();
         els.editor.focus();
       }
 
@@ -1075,6 +1282,7 @@ GitHub supports raw HTML details blocks in Markdown files.
         updateStats();
         requestRender();
         saveCache();
+        refreshFindAfterSourceChange();
         if (mode === 'reset') resetHistory();
         if (mode === 'push') pushHistory(currentState());
       }
@@ -1678,11 +1886,14 @@ GitHub supports raw HTML details blocks in Markdown files.
       function renderStl(text) {
         try {
           const triangles = parseAsciiStlTriangles(text);
+          const frame = document.createElement('div');
+          frame.className = 'stlViewerFrame';
           const canvas = document.createElement('canvas');
           canvas.className = 'stlCanvas';
           canvas.setAttribute('aria-label', 'ASCII STL model preview');
-          createStlCanvasViewer(canvas, triangles);
-          return diagramShell('STL', canvas, 'Drag the shaded model to rotate it.');
+          frame.appendChild(canvas);
+          createStlCanvasViewer(frame, canvas, triangles);
+          return diagramShell('STL', frame, 'Drag to rotate. Use the in-frame controls for view mode, rotation, shifting, and zoom.');
         } catch (err) {
           return diagramError('STL', err);
         }
@@ -1701,20 +1912,66 @@ GitHub supports raw HTML details blocks in Markdown files.
         return triangles;
       }
 
-      function createStlCanvasViewer(canvas, triangles) {
+      function createStlCanvasViewer(frame, canvas, triangles) {
         const points = triangles.flat();
         const center = [0, 1, 2].map(axis => points.reduce((sum, point) => sum + point[axis], 0) / points.length);
         const radius = Math.max(1e-9, ...points.map(point => Math.hypot(point[0] - center[0], point[1] - center[1], point[2] - center[2])));
-        const state = { rx: -0.7, ry: 0.55, dragging: false, x: 0, y: 0 };
-        const rotate = point => {
-          let x = (point[0] - center[0]) / radius;
-          let y = (point[1] - center[1]) / radius;
-          let z = (point[2] - center[2]) / radius;
-          const cy = Math.cos(state.ry), sy = Math.sin(state.ry), cx = Math.cos(state.rx), sx = Math.sin(state.rx);
-          [x, z] = [x * cy + z * sy, -x * sy + z * cy];
-          [y, z] = [y * cx - z * sx, y * sx + z * cx];
-          return [x, y, z];
+        const normalizedTriangles = triangles.map(tri => tri.map(point => [
+          (point[0] - center[0]) / radius,
+          (point[1] - center[1]) / radius,
+          (point[2] - center[2]) / radius
+        ]));
+        const initialRotation = () => multiplyMatrices(rotationMatrix([1, 0, 0], -0.72), rotationMatrix([0, 1, 0], 0.55));
+        const state = { rotation: initialRotation(), tx: 0, ty: 0, zoom: 1, mode: 'solid', dragging: false, lastVector: null };
+        const modeButtons = {};
+        const makeButton = (label, title, action, pressed = null) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'stlControlButton';
+          btn.textContent = label;
+          btn.title = title;
+          if (pressed != null) btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+          btn.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); action(); });
+          return btn;
         };
+        const addCluster = (className, buttons) => {
+          const cluster = document.createElement('div');
+          cluster.className = `stlControlCluster ${className}`;
+          buttons.forEach(item => cluster.appendChild(item === 'sep' ? Object.assign(document.createElement('span'), { className: 'stlControlSep' }) : item));
+          frame.appendChild(cluster);
+        };
+        const setMode = mode => {
+          state.mode = mode;
+          Object.entries(modeButtons).forEach(([key, btn]) => btn.setAttribute('aria-pressed', key === mode ? 'true' : 'false'));
+          draw();
+        };
+        const rotateByViewAxis = (axis, angle) => {
+          state.rotation = multiplyMatrices(rotationMatrix(axis, angle), state.rotation);
+          draw();
+        };
+        modeButtons.solid = makeButton('Solid', 'Solid view with light reflections', () => setMode('solid'), true);
+        modeButtons.angle = makeButton('Surface Angle', 'Surface angle view', () => setMode('angle'), false);
+        modeButtons.wireframe = makeButton('Wireframe', 'Wireframe view', () => setMode('wireframe'), false);
+        addCluster('stlModeControls', [modeButtons.solid, modeButtons.angle, modeButtons.wireframe]);
+        addCluster('stlRotateControls', [
+          makeButton('↶', 'Rotate left around the model center', () => rotateByViewAxis([0, 1, 0], -0.22)),
+          makeButton('↷', 'Rotate right around the model center', () => rotateByViewAxis([0, 1, 0], 0.22)),
+          makeButton('↥', 'Rotate up around the model center', () => rotateByViewAxis([1, 0, 0], -0.22)),
+          makeButton('↧', 'Rotate down around the model center', () => rotateByViewAxis([1, 0, 0], 0.22)),
+          'sep',
+          makeButton('⟲', 'Reset view', () => { state.rotation = initialRotation(); state.tx = 0; state.ty = 0; state.zoom = 1; draw(); })
+        ]);
+        addCluster('stlPanZoomControls', [
+          makeButton('←', 'Shift left', () => { state.tx -= 0.06; draw(); }),
+          makeButton('→', 'Shift right', () => { state.tx += 0.06; draw(); }),
+          makeButton('↑', 'Shift up', () => { state.ty += 0.06; draw(); }),
+          makeButton('↓', 'Shift down', () => { state.ty -= 0.06; draw(); }),
+          'sep',
+          makeButton('−', 'Zoom out', () => { state.zoom = Math.max(0.25, state.zoom / 1.15); draw(); }),
+          makeButton('+', 'Zoom in', () => { state.zoom = Math.min(6, state.zoom * 1.15); draw(); })
+        ]);
+        const transform = point => applyMatrix(state.rotation, point);
+        const rgb = (r, g, b) => `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
         const draw = () => {
           const rect = canvas.getBoundingClientRect();
           const width = Math.max(320, rect.width || 720);
@@ -1727,13 +1984,24 @@ GitHub supports raw HTML details blocks in Markdown files.
           const ctx = canvas.getContext('2d');
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           ctx.clearRect(0, 0, width, height);
-          const color = getComputedStyle(canvas).color || 'currentColor';
-          const scale = Math.min(width, height) * 0.38;
-          const projected = triangles.map(tri => {
-            const rotated = tri.map(rotate);
+          const css = getComputedStyle(canvas);
+          const strokeColor = css.color || 'currentColor';
+          const scale = Math.min(width, height) * 0.34 * state.zoom;
+          const light = normalize3([0.35, -0.55, 0.75]);
+          const view = [0, 0, 1];
+          const cameraDistance = 4.2;
+          const projectPoint = point => {
+            const perspective = cameraDistance / Math.max(1.15, cameraDistance - point[2]);
+            return [
+              width / 2 + (point[0] * perspective + state.tx) * scale,
+              height / 2 - (point[1] * perspective + state.ty) * scale
+            ];
+          };
+          const projected = normalizedTriangles.map(tri => {
+            const rotated = tri.map(transform);
             const avgZ = rotated.reduce((sum, point) => sum + point[2], 0) / 3;
             const normal = triangleNormal(rotated);
-            return { avgZ, normal, pts: rotated.map(([x, y]) => [width / 2 + x * scale, height / 2 - y * scale]) };
+            return { avgZ, normal, pts: rotated.map(projectPoint) };
           }).sort((a, b) => a.avgZ - b.avgZ);
           projected.forEach(tri => {
             ctx.beginPath();
@@ -1741,31 +2009,119 @@ GitHub supports raw HTML details blocks in Markdown files.
             ctx.lineTo(tri.pts[1][0], tri.pts[1][1]);
             ctx.lineTo(tri.pts[2][0], tri.pts[2][1]);
             ctx.closePath();
-            const shade = Math.max(0.08, Math.min(0.42, 0.16 + Math.abs(tri.normal[2]) * 0.26));
-            ctx.globalAlpha = shade;
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.globalAlpha = 0.58;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            ctx.stroke();
+            const facing = Math.max(0, dot(tri.normal, light));
+            const rim = Math.pow(Math.max(0, 1 - Math.abs(dot(tri.normal, view))), 2.2);
+            if (state.mode === 'solid') {
+              const shine = Math.pow(facing, 12) * 58;
+              ctx.fillStyle = rgb(92 + facing * 72 + shine + rim * 28, 129 + facing * 82 + shine + rim * 20, 178 + facing * 62 + shine);
+              ctx.fill();
+            } else if (state.mode === 'angle') {
+              const angle = Math.abs(tri.normal[2]);
+              ctx.fillStyle = rgb(49 + angle * 176, 104 + (1 - angle) * 98, 175 - angle * 96);
+              ctx.fill();
+              ctx.globalAlpha = 0.34;
+              ctx.strokeStyle = strokeColor;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+              ctx.globalAlpha = 1;
+            } else {
+              ctx.strokeStyle = strokeColor;
+              ctx.globalAlpha = 0.82;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              ctx.globalAlpha = 1;
+            }
           });
-          ctx.globalAlpha = 1;
         };
-        canvas.addEventListener('pointerdown', event => { state.dragging = true; state.x = event.clientX; state.y = event.clientY; canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId); });
+        const pointerVector = event => {
+          const rect = canvas.getBoundingClientRect();
+          const size = Math.max(1, Math.min(rect.width || 1, rect.height || 1));
+          let x = (2 * (event.clientX - rect.left) - rect.width) / size;
+          let y = (rect.height - 2 * (event.clientY - rect.top)) / size;
+          const length2 = x * x + y * y;
+          if (length2 <= 1) return [x, y, Math.sqrt(1 - length2)];
+          const length = Math.sqrt(length2) || 1;
+          return [x / length, y / length, 0];
+        };
+        canvas.addEventListener('pointerdown', event => {
+          event.preventDefault();
+          state.dragging = true;
+          state.lastVector = pointerVector(event);
+          canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
+        });
         canvas.addEventListener('pointermove', event => {
           if (!state.dragging) return;
-          state.ry += (event.clientX - state.x) * 0.01;
-          state.rx += (event.clientY - state.y) * 0.01;
-          state.x = event.clientX;
-          state.y = event.clientY;
-          draw();
+          event.preventDefault();
+          const nextVector = pointerVector(event);
+          const axis = cross(state.lastVector, nextVector);
+          const axisLength = Math.hypot(axis[0], axis[1], axis[2]);
+          if (axisLength > 1e-6) {
+            const angle = Math.atan2(axisLength, Math.max(-1, Math.min(1, dot(state.lastVector, nextVector))));
+            state.rotation = multiplyMatrices(rotationMatrix(axis, angle), state.rotation);
+            state.lastVector = nextVector;
+            draw();
+          }
         });
-        ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => canvas.addEventListener(type, () => { state.dragging = false; }));
+        canvas.addEventListener('wheel', event => {
+          event.preventDefault();
+          state.zoom = Math.max(0.25, Math.min(6, state.zoom * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
+          draw();
+        }, { passive: false });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => canvas.addEventListener(type, () => { state.dragging = false; state.lastVector = null; }));
         if (window.ResizeObserver) new ResizeObserver(draw).observe(canvas);
         else window.addEventListener('resize', draw);
         requestAnimationFrame(draw);
         draw();
+      }
+
+      function multiplyMatrices(a, b) {
+        return [
+          a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+          a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+          a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+          a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+          a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+          a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+          a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+          a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+          a[6] * b[2] + a[7] * b[5] + a[8] * b[8]
+        ];
+      }
+
+      function applyMatrix(m, point) {
+        return [
+          m[0] * point[0] + m[1] * point[1] + m[2] * point[2],
+          m[3] * point[0] + m[4] * point[1] + m[5] * point[2],
+          m[6] * point[0] + m[7] * point[1] + m[8] * point[2]
+        ];
+      }
+
+      function rotationMatrix(axis, angle) {
+        const n = normalize3(axis);
+        const x = n[0], y = n[1], z = n[2];
+        const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+        return [
+          t * x * x + c, t * x * y - s * z, t * x * z + s * y,
+          t * x * y + s * z, t * y * y + c, t * y * z - s * x,
+          t * x * z - s * y, t * y * z + s * x, t * z * z + c
+        ];
+      }
+
+      function cross(a, b) {
+        return [
+          a[1] * b[2] - a[2] * b[1],
+          a[2] * b[0] - a[0] * b[2],
+          a[0] * b[1] - a[1] * b[0]
+        ];
+      }
+
+      function dot(a, b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      }
+
+      function normalize3(v) {
+        const length = Math.hypot(v[0], v[1], v[2]) || 1;
+        return [v[0] / length, v[1] / length, v[2] / length];
       }
 
       function triangleNormal(tri) {
@@ -2076,6 +2432,347 @@ GitHub supports raw HTML details blocks in Markdown files.
         }
       }
 
+      const findState = { matches: [], index: -1, highlightAll: false, drag: null, error: '' };
+
+      function isFindDialogOpen() {
+        return els.findModal && els.findModal.classList.contains('show');
+      }
+
+      function selectedSearchText() {
+        const start = els.editor.selectionStart, end = els.editor.selectionEnd;
+        const text = els.editor.value.slice(start, end);
+        return text && !text.includes('\n') && !text.includes('\r') ? text : '';
+      }
+
+      function syncFindHighlightsLayout() {
+        if (!els.editor || !els.editorHighlights) return;
+        // Textareas reserve space for native scrollbars, while the passive
+        // highlight layer does not. Match the textarea's client box so soft
+        // wrapping stays aligned, especially at line ends when a vertical
+        // scrollbar is visible.
+        els.editorHighlights.style.width = `${Math.max(0, els.editor.clientWidth)}px`;
+        els.editorHighlights.style.height = `${Math.max(0, els.editor.clientHeight)}px`;
+        els.editorHighlights.style.right = 'auto';
+        els.editorHighlights.style.bottom = 'auto';
+      }
+
+      function syncFindHighlightsScroll() {
+        if (!els.editorHighlightContent) return;
+        syncFindHighlightsLayout();
+        els.editorHighlightContent.style.transform = `translate(${-els.editor.scrollLeft}px, ${-els.editor.scrollTop}px)`;
+      }
+
+      function clearFindHighlights() {
+        if (els.editorHighlightContent) els.editorHighlightContent.innerHTML = '';
+      }
+
+      function renderFindHighlights() {
+        if (!els.editorHighlightContent) return;
+        syncFindHighlightsScroll();
+        if (!findState.highlightAll || !isFindDialogOpen() || !els.findInput.value || !findState.matches.length) {
+          clearFindHighlights();
+          return;
+        }
+        const value = els.editor.value;
+        const html = [];
+        let pos = 0;
+        for (let i = 0; i < findState.matches.length; i++) {
+          const [start, end] = findState.matches[i];
+          html.push(escapeHtml(value.slice(pos, start)));
+          html.push(`<mark${i === findState.index ? ' class="current"' : ''}>${escapeHtml(value.slice(start, end))}</mark>`);
+          pos = end;
+        }
+        html.push(escapeHtml(value.slice(pos)));
+        if (value.endsWith('\n')) html.push(' ');
+        els.editorHighlightContent.innerHTML = html.join('') || ' ';
+      }
+
+      function setFindError(message = '') {
+        findState.error = message;
+        if (!els.findInput) return;
+        els.findInput.classList.toggle('findInvalid', !!message);
+        els.findInput.setAttribute('aria-invalid', message ? 'true' : 'false');
+        try { els.findInput.setCustomValidity(message || ''); } catch (_) {}
+      }
+
+      function regexFlags(global = true) {
+        return `${global ? 'g' : ''}m${els.findCaseToggle.checked ? '' : 'i'}`;
+      }
+
+      function makeFindRegex(query, global = true) {
+        try {
+          return new RegExp(String(query || ''), regexFlags(global));
+        } catch (err) {
+          setFindError(`Invalid regex: ${err && err.message ? err.message : 'check pattern'}`);
+          return null;
+        }
+      }
+
+      function addFindMatch(start, end, match = null) {
+        if (end <= start) return;
+        const range = [start, end];
+        if (match) {
+          range.matchText = match[0];
+          range.captures = Array.prototype.slice.call(match, 1);
+          range.groups = match.groups || null;
+        }
+        findState.matches.push(range);
+      }
+
+      function collectMatches(query = els.findInput.value, preserveIndex = false) {
+        const needle = String(query || '');
+        const haystack = els.editor.value;
+        const previousAnchor = findState.index >= 0 && findState.matches[findState.index]
+          ? findState.matches[findState.index][0]
+          : els.editor.selectionStart;
+        findState.matches = [];
+        findState.index = -1;
+        setFindError('');
+        if (!needle) { updateFindCount(); renderFindHighlights(); return findState.matches; }
+
+        if (els.findRegexToggle && els.findRegexToggle.checked) {
+          const regex = makeFindRegex(needle, true);
+          if (!regex) { updateFindCount(); renderFindHighlights(); return findState.matches; }
+          let match;
+          while ((match = regex.exec(haystack)) !== null) {
+            if (match[0].length) addFindMatch(match.index, match.index + match[0].length, match);
+            regex.lastIndex += match[0].length ? 0 : 1;
+          }
+        } else {
+          const source = els.findCaseToggle.checked ? haystack : haystack.toLowerCase();
+          const target = els.findCaseToggle.checked ? needle : needle.toLowerCase();
+          let pos = 0;
+          while ((pos = source.indexOf(target, pos)) !== -1) {
+            addFindMatch(pos, pos + needle.length);
+            pos += Math.max(1, needle.length);
+          }
+        }
+
+        if (preserveIndex && findState.matches.length) {
+          const next = findState.matches.findIndex(([start]) => start >= previousAnchor);
+          findState.index = next < 0 ? findState.matches.length - 1 : next;
+        }
+        updateFindCount();
+        renderFindHighlights();
+        return findState.matches;
+      }
+
+      function updateFindCount() {
+        if (!els.findCount) return;
+        if (findState.error) { els.findCount.textContent = 'invalid regex'; return; }
+        const total = findState.matches.length;
+        els.findCount.textContent = total ? `${Math.max(0, findState.index + 1)} of ${total}` : '0 matches';
+      }
+
+      function selectFindMatch(index) {
+        if (!findState.matches.length) { updateFindCount(); renderFindHighlights(); return false; }
+        findState.index = (index + findState.matches.length) % findState.matches.length;
+        const [start, end] = findState.matches[findState.index];
+        els.editor.focus();
+        els.editor.setSelectionRange(start, end);
+        const lineHeight = parseFloat(getComputedStyle(els.editor).lineHeight) || 18;
+        const linesBefore = els.editor.value.slice(0, start).split('\n').length - 1;
+        els.editor.scrollTop = Math.max(0, linesBefore * lineHeight - els.editor.clientHeight * 0.35);
+        syncFindHighlightsScroll();
+        updateFindCount();
+        renderFindHighlights();
+        return true;
+      }
+
+      function findNext(direction = 1) {
+        const cursor = direction >= 0 ? els.editor.selectionEnd : els.editor.selectionStart;
+        collectMatches();
+        if (findState.error) { setStatus(findState.error); return false; }
+        if (!findState.matches.length) { setStatus('No matches found.'); return false; }
+        let idx = direction >= 0 ? findState.matches.findIndex(([start]) => start >= cursor) : lastMatchBefore(cursor);
+        if (idx < 0) idx = direction >= 0 ? 0 : findState.matches.length - 1;
+        selectFindMatch(idx);
+        setStatus(`Match ${findState.index + 1} of ${findState.matches.length}.`);
+        return true;
+      }
+
+      function lastMatchBefore(cursor) {
+        for (let i = findState.matches.length - 1; i >= 0; i--) {
+          if (findState.matches[i][0] < cursor) return i;
+        }
+        return -1;
+      }
+
+      function findAllMatches() {
+        findState.highlightAll = true;
+        collectMatches(els.findInput.value, true);
+        if (findState.error) { setStatus(findState.error); return; }
+        if (!findState.matches.length) { setStatus('No matches found.'); return; }
+        const afterCursor = findState.matches.findIndex(([start]) => start >= els.editor.selectionStart);
+        selectFindMatch(afterCursor < 0 ? 0 : afterCursor);
+        setStatus(`Highlighted ${findState.matches.length.toLocaleString()} match${findState.matches.length === 1 ? '' : 'es'}.`);
+      }
+
+      function placeFindDialog() {
+        if (!els.findDialog || els.findDialog.dataset.placed) { keepFindDialogInViewport(); return; }
+        requestAnimationFrame(() => {
+          const rect = els.findDialog.getBoundingClientRect();
+          const left = Math.max(8, window.innerWidth - rect.width - 18);
+          const top = Math.max(48, Math.min(86, window.innerHeight - rect.height - 8));
+          els.findDialog.style.left = `${left}px`;
+          els.findDialog.style.top = `${top}px`;
+          els.findDialog.style.right = 'auto';
+          els.findDialog.dataset.placed = 'true';
+          keepFindDialogInViewport();
+        });
+      }
+
+      function keepFindDialogInViewport() {
+        if (!els.findDialog || !isFindDialogOpen()) return;
+        const rect = els.findDialog.getBoundingClientRect();
+        const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - Math.min(rect.width, window.innerWidth - 16) - 8));
+        const top = Math.min(Math.max(8, rect.top), Math.max(8, window.innerHeight - Math.min(rect.height, window.innerHeight - 16) - 8));
+        els.findDialog.style.left = `${left}px`;
+        els.findDialog.style.top = `${top}px`;
+        els.findDialog.style.right = 'auto';
+      }
+
+      function startFindDialogDrag(event) {
+        if (!els.findDialog || (event.button !== undefined && event.button !== 0)) return;
+        if (event.target.closest('button,input,select,textarea,label')) return;
+        const rect = els.findDialog.getBoundingClientRect();
+        findState.drag = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height
+        };
+        els.findDialog.classList.add('dragging');
+        try { els.findDialog.setPointerCapture(event.pointerId); } catch (_) {}
+        event.preventDefault();
+      }
+
+      function moveFindDialog(event) {
+        const drag = findState.drag;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        const nextLeft = Math.min(Math.max(8, drag.left + event.clientX - drag.startX), Math.max(8, window.innerWidth - drag.width - 8));
+        const nextTop = Math.min(Math.max(8, drag.top + event.clientY - drag.startY), Math.max(8, window.innerHeight - drag.height - 8));
+        els.findDialog.style.left = `${nextLeft}px`;
+        els.findDialog.style.top = `${nextTop}px`;
+        els.findDialog.style.right = 'auto';
+        event.preventDefault();
+      }
+
+      function stopFindDialogDrag(event) {
+        if (!findState.drag || findState.drag.pointerId !== event.pointerId) return;
+        try { els.findDialog.releasePointerCapture(event.pointerId); } catch (_) {}
+        findState.drag = null;
+        els.findDialog.classList.remove('dragging');
+      }
+
+      function refreshFindAfterSourceChange() {
+        if (!isFindDialogOpen()) { clearFindHighlights(); return; }
+        collectMatches(els.findInput.value, true);
+      }
+
+      function openFindModal(replaceMode = false, runAll = false) {
+        const wasOpen = isFindDialogOpen();
+        const selected = selectedSearchText();
+        if (selected) els.findInput.value = selected;
+        els.findDialog.classList.toggle('replaceMode', !!replaceMode);
+        els.findModal.classList.add('show');
+        placeFindDialog();
+        if (runAll) findState.highlightAll = true;
+        else if (!wasOpen) findState.highlightAll = false;
+        collectMatches(els.findInput.value, true);
+        setTimeout(() => {
+          els.findInput.focus();
+          els.findInput.select();
+          if (runAll) findAllMatches();
+        }, 0);
+      }
+
+      function closeFindModal() {
+        els.findModal.classList.remove('show');
+        findState.highlightAll = false;
+        findState.drag = null;
+        clearFindHighlights();
+        els.editor.focus();
+      }
+
+      function expandRegexReplacement(template, range, sourceValue = els.editor.value) {
+        const text = sourceValue.slice(range[0], range[1]);
+        const captures = range.captures || [];
+        const groups = range.groups || null;
+        return String(template || '').replace(/\$(\$|&|`|'|<[A-Za-z_$][\w$]*>|\d{1,2})/g, (full, token) => {
+          if (token === '$') return '$';
+          if (token === '&') return text;
+          if (token === '`') return sourceValue.slice(0, range[0]);
+          if (token === "'") return sourceValue.slice(range[1]);
+          if (token[0] === '<') {
+            const name = token.slice(1, -1);
+            return groups && Object.prototype.hasOwnProperty.call(groups, name) ? (groups[name] || '') : full;
+          }
+          const n = Number(token);
+          if (!Number.isFinite(n) || n <= 0) return full;
+          if (n <= captures.length) return captures[n - 1] == null ? '' : captures[n - 1];
+          if (token.length === 2) {
+            const first = Number(token[0]);
+            if (first > 0 && first <= captures.length) return (captures[first - 1] == null ? '' : captures[first - 1]) + token[1];
+          }
+          return full;
+        });
+      }
+
+      function replacementForMatch(range, replacement, sourceValue = els.editor.value) {
+        return els.findRegexToggle && els.findRegexToggle.checked
+          ? expandRegexReplacement(replacement, range, sourceValue)
+          : String(replacement || '');
+      }
+
+      function replaceCurrentMatch() {
+        const query = els.findInput.value;
+        if (!query) return;
+        collectMatches(query);
+        if (findState.error) { setStatus(findState.error); return; }
+        const start = els.editor.selectionStart, end = els.editor.selectionEnd;
+        let idx = findState.matches.findIndex(([a, b]) => a === start && b === end);
+        if (idx < 0) {
+          if (!findNext(1)) return;
+          idx = findState.index;
+        }
+        const rawReplacement = els.replaceInput.value || '';
+        flushPendingHistory();
+        const range = findState.matches[idx];
+        const [a, b] = range;
+        const value = els.editor.value;
+        const replacement = replacementForMatch(range, rawReplacement, value);
+        setEditorValue(value.slice(0, a) + replacement + value.slice(b), a, a + replacement.length, 'push');
+        collectMatches(query, true);
+        selectFindMatch(Math.min(idx, Math.max(0, findState.matches.length - 1)));
+        setStatus('Replaced current match.');
+      }
+
+      function replaceAllMatches() {
+        const query = els.findInput.value;
+        if (!query) return;
+        collectMatches(query);
+        if (findState.error) { setStatus(findState.error); return; }
+        if (!findState.matches.length) { setStatus('No matches found.'); return; }
+        const rawReplacement = els.replaceInput.value || '';
+        flushPendingHistory();
+        const original = els.editor.value;
+        let value = original;
+        for (let i = findState.matches.length - 1; i >= 0; i--) {
+          const range = findState.matches[i];
+          const [start, end] = range;
+          const replacement = replacementForMatch(range, rawReplacement, original);
+          value = value.slice(0, start) + replacement + value.slice(end);
+        }
+        const count = findState.matches.length;
+        setEditorValue(value, 0, 0, 'push');
+        collectMatches(query, true);
+        setStatus(`Replaced ${count.toLocaleString()} match${count === 1 ? '' : 'es'}.`);
+      }
+
       async function saveMarkdown(saveAs = false) {
         if (!LOCAL_BACKEND.token) {
           setStatus('This page must be opened through local_gfm_editor.py for real local file I/O.');
@@ -2123,6 +2820,7 @@ GitHub supports raw HTML details blocks in Markdown files.
 
       function setupScrollSync() {
         els.editor.addEventListener('scroll', () => {
+          syncFindHighlightsScroll();
           if (!els.syncToggle.checked || syncFrom === 'preview') return;
           syncFrom = 'editor';
           const ratio = els.editor.scrollTop / Math.max(1, els.editor.scrollHeight - els.editor.clientHeight);
@@ -2144,6 +2842,7 @@ GitHub supports raw HTML details blocks in Markdown files.
           updateStats();
           requestRender();
           saveCache();
+          refreshFindAfterSourceChange();
           clearTimeout(inputHistoryTimer);
           inputHistoryTimer = setTimeout(() => pushHistory(currentState()), 450);
         });
@@ -2162,6 +2861,14 @@ GitHub supports raw HTML details blocks in Markdown files.
             e.preventDefault();
             redo();
           }
+          if (e.ctrlKey && !e.altKey && key === 'f') {
+            e.preventDefault();
+            openFindModal(false);
+          }
+          if (e.ctrlKey && !e.altKey && key === 'h') {
+            e.preventDefault();
+            openFindModal(true);
+          }
           if (e.ctrlKey && !e.altKey && key === 's') {
             e.preventDefault();
             saveMarkdown(e.shiftKey);
@@ -2170,6 +2877,8 @@ GitHub supports raw HTML details blocks in Markdown files.
 
         document.addEventListener('keydown', e => {
           const key = e.key.toLowerCase();
+          if (e.ctrlKey && !e.altKey && key === 'f') { e.preventDefault(); openFindModal(false); return; }
+          if (e.ctrlKey && !e.altKey && key === 'h') { e.preventDefault(); openFindModal(true); return; }
           if (e.target === els.editor || e.target === els.pasteArea || e.target.tagName === 'INPUT') return;
           if (e.ctrlKey && !e.altKey && key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
           if (e.ctrlKey && !e.altKey && key === 'y') { e.preventDefault(); redo(); }
@@ -2209,6 +2918,26 @@ GitHub supports raw HTML details blocks in Markdown files.
         els.pasteModal.addEventListener('click', e => { if (e.target === els.pasteModal) closePasteModal(); });
         els.pasteArea.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); insertPastedTable(); } });
         els.insertPastedTableBtn.addEventListener('click', insertPastedTable);
+        els.findBtn.addEventListener('click', () => openFindModal(false));
+        els.findAllBtn.addEventListener('click', () => openFindModal(false, true));
+        els.replaceBtn.addEventListener('click', () => openFindModal(true));
+        els.closeFindBtn.addEventListener('click', closeFindModal);
+        els.findInput.addEventListener('input', () => collectMatches(els.findInput.value, true));
+        els.findCaseToggle.addEventListener('change', () => collectMatches(els.findInput.value, true));
+        els.findRegexToggle.addEventListener('change', () => collectMatches(els.findInput.value, true));
+        els.findDialog.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFindModal(); } });
+        els.findInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findNext(e.shiftKey ? -1 : 1); } });
+        els.replaceInput.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); replaceCurrentMatch(); } });
+        els.findDragHandle.addEventListener('pointerdown', startFindDialogDrag);
+        els.findDialog.addEventListener('pointermove', moveFindDialog);
+        els.findDialog.addEventListener('pointerup', stopFindDialogDrag);
+        els.findDialog.addEventListener('pointercancel', stopFindDialogDrag);
+        window.addEventListener('resize', keepFindDialogInViewport);
+        els.findPrevBtn.addEventListener('click', () => findNext(-1));
+        els.findNextBtn.addEventListener('click', () => findNext(1));
+        els.findAllModalBtn.addEventListener('click', findAllMatches);
+        els.replaceOneBtn.addEventListener('click', replaceCurrentMatch);
+        els.replaceAllBtn.addEventListener('click', replaceAllMatches);
         els.copyTsvBtn.addEventListener('click', async () => {
           try {
             const rows = parseMarkdownTable(getCurrentTableText());
