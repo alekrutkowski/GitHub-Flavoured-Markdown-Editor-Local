@@ -5,6 +5,7 @@ import argparse
 import json
 import mimetypes
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -16,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-BUILD_ID = "2026-06-29-v5-save-as-button"
+BUILD_ID = "2026-07-06-v7-drop-handle-dpi"
 TEXT_EXTENSIONS = {".md", ".markdown", ".mdown", ".mkd", ".txt", ""}
 OPEN_FILETYPES = [
     ("Markdown files", "*.md *.markdown *.mdown *.mkd"),
@@ -28,6 +29,42 @@ SAVE_FILETYPES = [
     ("Text files", "*.txt"),
     ("All files", "*.*"),
 ]
+
+
+def default_dialog_dir() -> Path:
+    for candidate in (Path.home() / "Documents", Path.home()):
+        try:
+            if candidate.exists() and candidate.is_dir():
+                return candidate.resolve()
+        except Exception:
+            pass
+    return Path.cwd().resolve()
+
+
+def enable_windows_dpi_awareness() -> None:
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        try:
+            # Windows 10+: per-monitor v2 gives the sharpest common dialogs.
+            if user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4)):
+                return
+        except Exception:
+            pass
+        try:
+            # Windows 8.1+: per-monitor DPI aware.
+            if ctypes.windll.shcore.SetProcessDpiAwareness(2) == 0:
+                return
+        except Exception:
+            pass
+        try:
+            user32.SetProcessDPIAware()
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 def read_text_file(path: Path) -> str:
@@ -63,9 +100,9 @@ def normalize_initial(initial_path: str | None, suggested_name: str = "untitled.
         if p.exists() and p.is_dir():
             return p.resolve(), suggested_name or "untitled.md"
         if p.name:
-            parent = p.parent if str(p.parent) not in ("", ".") else Path.cwd()
+            parent = p.parent if str(p.parent) not in ("", ".") else default_dialog_dir()
             return parent.expanduser().resolve(), p.name
-    return Path.cwd().resolve(), suggested_name or "untitled.md"
+    return default_dialog_dir(), suggested_name or "untitled.md"
 
 
 def dialog_helper_main(payload_json: str) -> int:
@@ -76,11 +113,18 @@ def dialog_helper_main(payload_json: str) -> int:
         suggested_name = payload.get("suggested_name") or "untitled.md"
         initial_dir, initial_file = normalize_initial(initial_path, suggested_name)
 
+        enable_windows_dpi_awareness()
         import tkinter as tk
         from tkinter import filedialog
 
         root = tk.Tk()
         root.title("Local Markdown Editor")
+        try:
+            dpi = root.winfo_fpixels("1i")
+            if dpi and dpi > 0:
+                root.tk.call("tk", "scaling", dpi / 72.0)
+        except Exception:
+            pass
         try:
             root.geometry("1x1+80+80")
             root.attributes("-topmost", True)
@@ -154,8 +198,24 @@ def run_powershell_winforms_dialog(kind: str, initial_path: str | None = None, s
     initial_dir, initial_file = normalize_initial(initial_path, suggested_name)
     script = r'''
 param([string]$Mode, [string]$InitialDirectory, [string]$InitialFile)
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public static class DpiHelper {
+  [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
+  [DllImport("shcore.dll")] public static extern int SetProcessDpiAwareness(int value);
+  [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+  public static void Enable() {
+    try { if (SetProcessDpiAwarenessContext(new IntPtr(-4))) return; } catch {}
+    try { if (SetProcessDpiAwareness(2) == 0) return; } catch {}
+    try { SetProcessDPIAware(); } catch {}
+  }
+}
+"@
+[DpiHelper]::Enable()
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+try { [System.Windows.Forms.Application]::SetHighDpiMode([System.Windows.Forms.HighDpiMode]::PerMonitorV2) | Out-Null } catch {}
 [System.Windows.Forms.Application]::EnableVisualStyles()
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Local Markdown Editor'
@@ -238,7 +298,7 @@ def run_zenity_or_kdialog(kind: str, initial_path: str | None = None, suggested_
 def ask_dialog(kind: str, initial_path: str | None = None, suggested_name: str = "untitled.md", backend: str = "auto") -> Path | None:
     errors: list[str] = []
     if backend == "auto":
-        order = ["tk", "winforms"] if os.name == "nt" else ["native", "tk"]
+        order = ["winforms", "tk"] if os.name == "nt" else ["native", "tk"]
     else:
         order = [backend]
     for method in order:
@@ -261,6 +321,7 @@ class LocalEditorServer(HTTPServer):
         self.startup_path = startup_path
         self.token = token
         self.dialog_backend = dialog_backend
+        self.last_dir = (startup_path.parent if startup_path else default_dialog_dir()).resolve()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -309,6 +370,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path in {"/api/open", "/api/open-dialog", "/api/open_file", "/api/open-file"}:
             self.handle_open_dialog()
+        elif parsed.path in {"/api/open-path", "/api/read-path", "/api/open-known-path"}:
+            self.handle_open_path()
         elif parsed.path in {"/api/save", "/api/save-dialog", "/api/save-as", "/api/write", "/api/write-file"}:
             self.handle_save()
         else:
@@ -325,19 +388,40 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:
             return {"path": str(path), "name": path.name, "text": None, "error": str(exc)}
 
+    def send_opened_file(self, path: Path) -> None:
+        selected = path.expanduser().resolve()
+        if not selected.exists() or not selected.is_file():
+            raise FileNotFoundError(f"File does not exist: {selected}")
+        self.app_server.last_dir = selected.parent
+        self.send_json({"ok": True, "canceled": False, "path": str(selected), "name": selected.name, "text": read_text_file(selected)})
+
     def handle_open_dialog(self) -> None:
         try:
             payload = self.read_json_body()
             print("Opening native file-open dialog...", flush=True)
-            selected = ask_dialog("open", payload.get("path") or None, backend=self.app_server.dialog_backend)
+            selected = ask_dialog("open", payload.get("path") or str(self.app_server.last_dir), backend=self.app_server.dialog_backend)
             if selected is None:
                 self.send_json({"ok": True, "canceled": True})
                 return
-            self.send_json({"ok": True, "canceled": False, "path": str(selected), "name": selected.name, "text": read_text_file(selected)})
+            self.send_opened_file(selected)
             print(f"Opened {selected}", flush=True)
         except Exception as exc:
             self.send_json({"ok": False, "error": str(exc)}, status=500)
             print(f"Open failed: {exc}", flush=True)
+
+    def handle_open_path(self) -> None:
+        try:
+            payload = self.read_json_body()
+            raw_path = str(payload.get("path") or "").strip()
+            if not raw_path:
+                self.send_json({"ok": False, "error": "No path was supplied."}, status=400)
+                return
+            selected = Path(raw_path).expanduser().resolve()
+            self.send_opened_file(selected)
+            print(f"Opened dropped path {selected}", flush=True)
+        except Exception as exc:
+            self.send_json({"ok": False, "error": str(exc)}, status=500)
+            print(f"Open dropped path failed: {exc}", flush=True)
 
     def handle_save(self) -> None:
         try:
@@ -346,19 +430,25 @@ class Handler(BaseHTTPRequestHandler):
             suggested_name = normalize_suggested_name(str(payload.get("suggested_name") or "untitled.md"))
             existing_path = str(payload.get("path") or "").strip()
             save_as = bool(payload.get("save_as"))
-            if existing_path and not save_as:
-                current_path = Path(existing_path).expanduser().resolve()
+            current_path_input = Path(existing_path).expanduser() if existing_path else None
+            bare_relative_path = bool(current_path_input and not current_path_input.is_absolute() and current_path_input.parent == Path("."))
+            if existing_path and not save_as and not bare_relative_path:
+                current_path = current_path_input.resolve()
                 # The filename field in the HTML UI is authoritative.
                 # If the user edits it, plain Save writes beside the current file
                 # under the edited name instead of silently reverting to the old path.
                 path = current_path.with_name(suggested_name) if suggested_name != current_path.name else current_path
             else:
+                # Do not treat a browser-only file.name like "notes.md" as a real path.
+                # Resolving such a bare name would write into the editor's working folder.
                 print("Opening native file-save dialog...", flush=True)
-                path = ask_dialog("save", existing_path or None, suggested_name, backend=self.app_server.dialog_backend)
+                dialog_initial = existing_path if existing_path and not bare_relative_path else str(self.app_server.last_dir)
+                path = ask_dialog("save", dialog_initial, suggested_name, backend=self.app_server.dialog_backend)
                 if path is None:
                     self.send_json({"ok": True, "canceled": True})
                     return
             write_text_file(path, text)
+            self.app_server.last_dir = path.parent
             self.send_json({"ok": True, "canceled": False, "path": str(path), "name": path.name})
             print(f"Saved {path}", flush=True)
         except Exception as exc:
@@ -391,8 +481,11 @@ class Handler(BaseHTTPRequestHandler):
                 "dialogBackend": self.app_server.dialog_backend,
             }
             text = data.decode("utf-8")
-            marker = 'window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static"};'
-            text = text.replace(marker, 'window.__LOCAL_BACKEND__ = ' + json.dumps(boot, ensure_ascii=False) + ';')
+            boot_script = 'window.__LOCAL_BACKEND__ = ' + json.dumps(boot, ensure_ascii=False) + ';'
+            text, replaced = re.subn(r'window\.__LOCAL_BACKEND__\s*=\s*\{[^\n]*\};', lambda _match: boot_script, text, count=1)
+            if not replaced:
+                marker = 'window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static"};'
+                text = text.replace(marker, boot_script)
             data = text.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", content_type + ("; charset=utf-8" if content_type.startswith("text/") or content_type in {"application/javascript", "text/html"} else ""))
@@ -416,6 +509,7 @@ def find_server(public_dir: Path, startup_path: Path | None, requested_port: int
 
 
 def main(argv: list[str] | None = None) -> int:
+    enable_windows_dpi_awareness()
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] == "--_dialog_helper":
         return dialog_helper_main(argv[1] if len(argv) > 1 else "{}")
@@ -424,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("file", nargs="?", help="Optional Markdown file to open at startup.")
     parser.add_argument("--port", type=int, default=8765, help="Preferred local port. Default: 8765.")
     parser.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically.")
-    parser.add_argument("--dialog-backend", choices=["auto", "tk", "winforms", "native"], default="auto", help="Native dialog mechanism. On Windows auto means tk first, then winforms.")
+    parser.add_argument("--dialog-backend", choices=["auto", "tk", "winforms", "native"], default="auto", help="Native dialog mechanism. On Windows auto means WinForms first, then Tk.")
     parser.add_argument("--test-dialog", choices=["open", "save"], help="Show a native dialog and print the selected path, then exit.")
     args = parser.parse_args(argv)
 
@@ -440,7 +534,7 @@ def main(argv: list[str] | None = None) -> int:
     url = f"http://127.0.0.1:{port}/?v={BUILD_ID}"
     print(f"Local GitHub Markdown Editor backend {BUILD_ID}")
     print(f"Serving: {url}")
-    print(f"Dialog backend: {args.dialog_backend} (Windows auto = Tk first, then WinForms)")
+    print(f"Dialog backend: {args.dialog_backend} (Windows auto = WinForms first, then Tk)")
     if startup_path:
         print(f"Startup file: {startup_path}")
     print("Open this URL in the browser. Press Ctrl+C here to stop.")

@@ -927,7 +927,7 @@
   </div>
 
 <script id="localBackendBoot">
-window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static"};
+window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startupText":null,"build":"static-v7-drop-handle-dpi"};
 </script>
 
   <div class="modalBackdrop" id="findModal" role="dialog" aria-modal="false" aria-labelledby="findTitle">
@@ -961,6 +961,7 @@ window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startu
 
       const LOCAL_BACKEND = window.__LOCAL_BACKEND__ || {};
       let currentLocalPath = LOCAL_BACKEND.startupPath || '';
+      let currentFileHandle = null;
 
       const els = {
         editor: document.getElementById('editor'),
@@ -1016,6 +1017,7 @@ window.__LOCAL_BACKEND__ = {"token":"","startupPath":"","startupName":"","startu
 
       const CACHE_TEXT = 'gh-md-editor.text.v5';
       const CACHE_NAME = 'gh-md-editor.fileName.v5';
+      const CACHE_PATH = 'gh-md-editor.localPath.v6';
       const MAX_HISTORY = 180;
       const alertTypes = ['NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION'];
 
@@ -1184,6 +1186,10 @@ GitHub supports raw HTML details blocks in Markdown files.
         return /\.(md|markdown|mdown|mkd|txt)$/i.test(clean) ? clean : clean + '.md';
       }
 
+      function isMarkdownLikeName(name) {
+        return /\.(?:md|markdown|mdown|mkd|txt)$/i.test(String(name || ''));
+      }
+
       function updateFileName(name) {
         const finalName = normalizeFileName(name);
         els.fileNameInput.value = finalName;
@@ -1272,6 +1278,8 @@ GitHub supports raw HTML details blocks in Markdown files.
         try {
           localStorage.setItem(CACHE_TEXT, els.editor.value);
           localStorage.setItem(CACHE_NAME, normalizeFileName(els.fileNameInput.value));
+          if (currentLocalPath) localStorage.setItem(CACHE_PATH, currentLocalPath);
+          else localStorage.removeItem(CACHE_PATH);
         } catch (_) {}
       }
 
@@ -1903,9 +1911,11 @@ GitHub supports raw HTML details blocks in Markdown files.
         const pending = [];
         const triangles = [];
         String(source || '').split(/\r?\n/).forEach(line => {
-          const match = line.trim().match(/^vertex\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)\s+([-+]?\d*\.?\d+(?:e[-+]?\d+)?)/i);
+          const match = line.trim().match(/^vertex\s+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)\s+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)\s+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/i);
           if (!match) return;
-          pending.push(match.slice(1, 4).map(Number));
+          const vertex = match.slice(1, 4).map(Number);
+          if (!vertex.every(Number.isFinite)) return;
+          pending.push(vertex);
           if (pending.length === 3) triangles.push(pending.splice(0, 3));
         });
         if (!triangles.length) throw new Error('No ASCII STL triangles found.');
@@ -2409,9 +2419,95 @@ GitHub supports raw HTML details blocks in Markdown files.
         return String(path || '').split(/[\\/]/).filter(Boolean).pop() || '';
       }
 
-      function setCurrentLocalPath(path, name) {
+      function hasKnownSavePath(path) {
+        const value = String(path || '').trim();
+        return /^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+|\/)/.test(value);
+      }
+
+      function droppedFileHandlePromises(dataTransfer) {
+        const items = Array.from(dataTransfer && dataTransfer.items ? dataTransfer.items : []);
+        const promises = [];
+        for (const item of items) {
+          if (item && item.kind === 'file' && typeof item.getAsFileSystemHandle === 'function') {
+            try { promises.push(item.getAsFileSystemHandle().catch(() => null)); } catch (_) {}
+          }
+        }
+        return promises;
+      }
+
+      async function firstMarkdownFileHandle(handlePromises) {
+        if (!handlePromises || !handlePromises.length) return null;
+        const handles = await Promise.all(handlePromises);
+        return handles.find(handle => handle && handle.kind === 'file' && isMarkdownLikeName(handle.name)) || null;
+      }
+
+      async function ensureFileHandleWritePermission(handle) {
+        const options = { mode: 'readwrite' };
+        if (typeof handle.queryPermission === 'function') {
+          const existing = await handle.queryPermission(options);
+          if (existing === 'granted') return true;
+        }
+        if (typeof handle.requestPermission === 'function') {
+          return await handle.requestPermission(options) === 'granted';
+        }
+        return true;
+      }
+
+      async function writeBrowserFileHandle(handle, text) {
+        if (!handle || typeof handle.createWritable !== 'function') {
+          throw new Error('This browser did not provide a writable file handle.');
+        }
+        if (!await ensureFileHandleWritePermission(handle)) {
+          throw new Error('Write permission was not granted for the dropped file.');
+        }
+        const writable = await handle.createWritable();
+        try {
+          await writable.write(String(text || ''));
+          await writable.close();
+        } catch (err) {
+          try { await writable.abort(); } catch (_) {}
+          throw err;
+        }
+      }
+
+      function savePickerOptions(name) {
+        const options = {
+          suggestedName: normalizeFileName(name),
+          types: [{
+            description: 'Markdown and text files',
+            accept: {
+              'text/markdown': ['.md', '.markdown', '.mdown', '.mkd'],
+              'text/plain': ['.txt']
+            }
+          }]
+        };
+        if (currentFileHandle) {
+          try { options.startIn = currentFileHandle; } catch (_) {}
+        }
+        return options;
+      }
+
+      async function saveViaBrowserPicker(name, text) {
+        if (typeof window.showSaveFilePicker !== 'function') return null;
+        try {
+          const handle = await window.showSaveFilePicker(savePickerOptions(name));
+          await writeBrowserFileHandle(handle, text);
+          currentLocalPath = '';
+          currentFileHandle = handle;
+          updateFileName(handle.name || name);
+          saveCache();
+          return { ok: true, canceled: false, name: handle.name || name };
+        } catch (err) {
+          if (err && err.name === 'AbortError') return { ok: true, canceled: true };
+          throw err;
+        }
+      }
+
+      function setCurrentLocalPath(path, name, fileHandle = null) {
         currentLocalPath = path || '';
+        currentFileHandle = fileHandle || null;
         if (name || path) updateFileName(name || pathBaseName(path) || 'untitled.md');
+        saveCache();
       }
 
       async function openMarkdownFromBackend() {
@@ -2429,6 +2525,53 @@ GitHub supports raw HTML details blocks in Markdown files.
           setStatus(`Opened ${result.path || result.name}.`);
         } catch (err) {
           setStatus(`Open failed: ${err && err.message ? err.message : err}`);
+        }
+      }
+
+      function fileUrlToPath(uri) {
+        try {
+          const url = new URL(uri);
+          if (url.protocol !== 'file:') return '';
+          let path = decodeURIComponent(url.pathname || '');
+          if (url.hostname) path = `//${url.hostname}${path}`;
+          if (/^\/[A-Za-z]:\//.test(path)) path = path.slice(1);
+          return path;
+        } catch (_) {
+          return '';
+        }
+      }
+
+      function droppedPathFromDataTransfer(dataTransfer) {
+        if (!dataTransfer) return '';
+        const candidates = [];
+        for (const type of ['text/uri-list', 'text/plain']) {
+          try {
+            const value = dataTransfer.getData(type);
+            if (value) {
+              candidates.push(...value.split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#')));
+            }
+          } catch (_) {}
+        }
+        for (const candidate of candidates) {
+          const path = candidate.startsWith('file:') ? fileUrlToPath(candidate) : candidate;
+          if (/^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+|\/)/.test(path) && /\.(?:md|markdown|mdown|mkd|txt)$/i.test(path)) return path;
+        }
+        return '';
+      }
+
+      async function openPathFromBackend(path) {
+        if (!LOCAL_BACKEND.token || !path) return false;
+        flushPendingHistory();
+        try {
+          const result = await backendJson('/api/open-path', { path });
+          if (result.canceled) { setStatus('Open canceled.'); return true; }
+          setCurrentLocalPath(result.path || path, result.name || pathBaseName(path) || 'untitled.md');
+          setEditorValue(String(result.text || ''), 0, 0, 'reset');
+          setStatus(`Opened ${result.path || result.name}.`);
+          return true;
+        } catch (err) {
+          setStatus(`Drop path open failed: ${err && err.message ? err.message : err}`);
+          return false;
         }
       }
 
@@ -2781,13 +2924,45 @@ GitHub supports raw HTML details blocks in Markdown files.
         flushPendingHistory();
         const name = normalizeFileName(els.fileNameInput.value);
         updateFileName(name);
+        const knownPath = hasKnownSavePath(currentLocalPath);
         const currentName = pathBaseName(currentLocalPath);
-        const nameChanged = !!currentLocalPath && !!currentName && name !== currentName;
-        const mustAskForPath = !!saveAs || !currentLocalPath;
+        const nameChanged = knownPath && !!currentName && name !== currentName;
+        const handleName = currentFileHandle && currentFileHandle.name ? currentFileHandle.name : '';
+        const handleNameChanged = !!handleName && name !== handleName;
+
+        if (!saveAs && currentFileHandle && !handleNameChanged) {
+          setStatus('Saving to dropped file…');
+          try {
+            await writeBrowserFileHandle(currentFileHandle, els.editor.value);
+            updateFileName(handleName || name);
+            saveCache();
+            setStatus(`Saved ${handleName || name}.`);
+            return;
+          } catch (err) {
+            setStatus(`Save failed: ${err && err.message ? err.message : err}`);
+            return;
+          }
+        }
+
+        if (!knownPath && (saveAs || !currentFileHandle || handleNameChanged)) {
+          setStatus('Choose where to save…');
+          try {
+            const browserResult = await saveViaBrowserPicker(name, els.editor.value);
+            if (browserResult) {
+              if (browserResult.canceled) { setStatus('Save canceled.'); return; }
+              setStatus(`Saved ${browserResult.name}.`);
+              return;
+            }
+          } catch (err) {
+            setStatus(`Browser save picker failed: ${err && err.message ? err.message : err}`);
+          }
+        }
+
+        const mustAskForPath = !!saveAs || !knownPath || !!handleNameChanged;
         setStatus(mustAskForPath ? 'Choose where to save…' : (nameChanged ? `Saving as ${name}…` : 'Saving…'));
         try {
           const result = await backendJson('/api/save', {
-            path: currentLocalPath || '',
+            path: knownPath ? currentLocalPath : '',
             suggested_name: name,
             text: els.editor.value,
             save_as: mustAskForPath
@@ -2801,9 +2976,33 @@ GitHub supports raw HTML details blocks in Markdown files.
         }
       }
 
-      function openFile(file) {
+      async function openFile(file, knownPath = '', handlePromises = []) {
+        if (!file && !knownPath && !(handlePromises && handlePromises.length)) return;
+        if (knownPath && await openPathFromBackend(knownPath)) return;
+        try {
+          const handle = await firstMarkdownFileHandle(handlePromises);
+          if (handle) {
+            const handleFile = await handle.getFile();
+            const text = await handleFile.text();
+            flushPendingHistory();
+            setCurrentLocalPath('', handleFile.name || handle.name || 'untitled.md', handle);
+            setEditorValue(text, 0, 0, 'reset');
+            setStatus(`Opened ${handleFile.name || handle.name || 'dropped file'} with a browser file handle. Save will write back to the dropped file.`);
+            return;
+          }
+        } catch (err) {
+          setStatus(`File-handle drop failed: ${err && err.message ? err.message : err}`);
+        }
         if (!file) return;
-        setStatus('Use Open to select a real local file through the backend. Browser drops do not expose a trusted save path.');
+        try {
+          const text = await file.text();
+          flushPendingHistory();
+          setCurrentLocalPath('', file.name || 'untitled.md');
+          setEditorValue(text, 0, 0, 'reset');
+          setStatus(`Opened ${file.name || 'dropped file'} through browser import. Save will ask for a real local path because this browser did not expose a writable handle.`);
+        } catch (err) {
+          setStatus(`Open failed: ${err && err.message ? err.message : err}`);
+        }
       }
 
       function setupDragDrop() {
@@ -2813,8 +3012,10 @@ GitHub supports raw HTML details blocks in Markdown files.
         document.addEventListener('dragleave', e => { depth = Math.max(0, depth - 1); if (!depth) document.body.classList.remove('dragging'); });
         document.addEventListener('drop', e => {
           e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+          const handlePromises = droppedFileHandlePromises(e.dataTransfer);
           const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-          openFile(file);
+          const knownPath = droppedPathFromDataTransfer(e.dataTransfer);
+          openFile(file, knownPath, handlePromises);
         });
       }
 
@@ -2895,12 +3096,13 @@ GitHub supports raw HTML details blocks in Markdown files.
         els.redoBtn.addEventListener('click', redo);
         els.exampleBtn.addEventListener('click', () => {
           currentLocalPath = '';
+          currentFileHandle = null;
           updateFileName('github-markdown-example.md');
           setEditorValue(EXAMPLE, 0, 0, 'reset');
           setStatus('Loaded example. Save will ask for a real local path.');
         });
         els.clearCacheBtn.addEventListener('click', () => {
-          try { localStorage.removeItem(CACHE_TEXT); localStorage.removeItem(CACHE_NAME); } catch (_) {}
+          try { localStorage.removeItem(CACHE_TEXT); localStorage.removeItem(CACHE_NAME); localStorage.removeItem(CACHE_PATH); } catch (_) {}
           setStatus('Local cache cleared. Current content kept.');
         });
         els.fileNameInput.addEventListener('input', () => updateFileName(els.fileNameInput.value));
@@ -2963,13 +3165,18 @@ GitHub supports raw HTML details blocks in Markdown files.
         worker = createWorker();
         const cachedText = (() => { try { return localStorage.getItem(CACHE_TEXT); } catch (_) { return null; } })();
         const cachedName = (() => { try { return localStorage.getItem(CACHE_NAME); } catch (_) { return null; } })();
+        const cachedPath = (() => { try { return localStorage.getItem(CACHE_PATH); } catch (_) { return null; } })();
+        const hasCachedDocument = cachedText !== null;
         if (typeof LOCAL_BACKEND.startupText === 'string') {
           currentLocalPath = LOCAL_BACKEND.startupPath || '';
-          updateFileName(LOCAL_BACKEND.startupName || (currentLocalPath ? currentLocalPath.split(/[\/]/).pop() : 'untitled.md'));
+          currentFileHandle = null;
+          updateFileName(LOCAL_BACKEND.startupName || pathBaseName(currentLocalPath) || 'untitled.md');
           els.editor.value = LOCAL_BACKEND.startupText;
         } else {
-          updateFileName(cachedName || 'untitled.md');
-          els.editor.value = cachedText || EXAMPLE;
+          currentLocalPath = hasCachedDocument && cachedPath && hasKnownSavePath(cachedPath) ? cachedPath : '';
+          currentFileHandle = null;
+          updateFileName((hasCachedDocument && cachedName) || pathBaseName(currentLocalPath) || 'untitled.md');
+          els.editor.value = hasCachedDocument ? cachedText : EXAMPLE;
         }
         updateStats();
         resetHistory();
@@ -2977,7 +3184,11 @@ GitHub supports raw HTML details blocks in Markdown files.
         wireEvents();
         setupDragDrop();
         setupScrollSync();
-        setStatus(typeof LOCAL_BACKEND.startupText === 'string' ? `Ready. Opened ${LOCAL_BACKEND.startupName || 'startup file'}. Backend 2026-06-29-v4-filename-authoritative.` : (cachedText ? `Restored from local cache. Backend 2026-06-29-v4-filename-authoritative.` : `Ready. Backend 2026-06-29-v4-filename-authoritative.`));
+        setStatus(typeof LOCAL_BACKEND.startupText === 'string'
+          ? `Ready. Opened ${LOCAL_BACKEND.startupName || 'startup file'}. Backend 2026-07-06-v7-drop-handle-dpi.`
+          : (cachedText
+            ? `Restored from local cache${currentLocalPath ? ` for ${currentLocalPath}` : ''}. Backend 2026-07-06-v7-drop-handle-dpi.`
+            : `Ready. Backend 2026-07-06-v7-drop-handle-dpi.`));
       }
 
       init();
